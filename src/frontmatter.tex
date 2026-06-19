@@ -1,0 +1,66 @@
+\begin{titlepage}
+\thispagestyle{empty}
+% A first, visible "Cover" line in the Contents (and a matching PDF bookmark),
+% both pointing at this title page, so the table of contents opens with a
+% clickable entry back to page 1 of the book.
+\phantomsection
+\addcontentsline{toc}{chapter}{Cover}
+\AddToShipoutPictureBG*{\put(\LenToUnit{0.5683\paperwidth},\LenToUnit{0.5\paperheight}){\makebox(0,0){\includegraphics[width=0.84\paperwidth]{bg_titlepage.png}}}}
+\centering
+% Title-page vertical spacing is elastic, so the one page fits both paper sizes.
+% Each gap carries a "minus" shrink component but keeps its natural size, and the
+% \vfill below absorbs all positive slack. On A4 (ample height) the \vfill takes
+% the slack, so every gap sits at its natural size and the page is unchanged. On
+% A5 (less height) the content would otherwise overflow onto a second page (which
+% then inherits the running header and tag); instead TeX removes the small height
+% difference by shrinking these gaps proportionally, within the minus budget, so
+% the cover stays a single page. test_build.py asserts the Contents lands on page
+% 2 for every edition, which is what catches a title page that has spilled.
+\vspace*{1.9cm minus 1cm}
+
+{\sffamily\bfseries\color{accent}\fontsize{46}{50}\selectfont SOVEREIGN STACK\par}
+
+\vspace{9pt minus 3pt}
+{\sffamily\itshape\normalsize\color{softblack!80} A ground-up IT education for the age of AI\par}
+
+\vspace{13pt minus 5pt}
+{\color{rulegray}\rule{0.66\textwidth}{1.1pt}\par}
+\vspace{22pt minus 8pt}
+
+{\sffamily\large\color{accentlt}\textbf{VOLUME 1}\par}
+\vspace{6pt minus 2pt}
+{\sffamily\bfseries\color{softblack}\fontsize{30}{34}\selectfont Home Node\par}
+
+\vspace{30pt minus 12pt}
+
+{\sffamily\large\color{softblack} Build Your Own Local AI at Home,\\[3pt]
+Reachable Securely From Anywhere, Depending on Nobody\par}
+
+\vspace{26pt minus 10pt}
+
+{\itshape\normalsize\color{softblack!75}
+A foundation starter kit for one person and one machine: from bare\\
+hardware to an AI agent that runs on the box you own, reached over\\
+the internet, with no cloud doing its thinking or holding its data,\\
+and the networking and security to understand every single step.\par}
+
+\vfill
+
+{\sffamily\footnotesize\color{softblack!60}
+A multi-volume series. Volume 1 covers the home, one person and one node.\\
+Later volumes carry the same method outward: the school, the university, the city.\par}
+\vspace{16pt minus 6pt}
+{\sffamily\small\color{accentlt}\textbf{First Edition}\par}
+\vspace{4pt minus 1pt}
+{\sffamily\footnotesize\color{softblack!55} A living field manual, a map, not scripture.\par}
+\vspace{1.0cm minus 0.7cm}
+\end{titlepage}
+
+\clearpage
+\thispagestyle{plain}
+{\sffamily\Large\bfseries\color{accent}Contents\par}\vspace{6pt}
+{\color{rulegray}\hrule height 0.8pt}\vspace{10pt}
+\makeatletter
+\@starttoc{toc}
+\makeatother
+\clearpage

@@ -1,0 +1,5 @@
+# Ignore the temp folder
+temp/
+
+# Ignore all .zip files
+*.zip

@@ -1,0 +1,116 @@
+{
+  "project": "Sovereign Stack, Volume 1: Home Node",
+  "slug": "sovereign-stack-vol1",
+  "scheme": "v{volume}v{version}i{iteration}; volume and version from config.toml, iteration from the folder name",
+  "updated": "2026-06-19",
+  "current": {
+    "volume": 1,
+    "version": 1,
+    "iteration": 32,
+    "tag": "v1v1i32"
+  },
+  "history": [
+    {
+      "iteration": 14,
+      "tag": "v1v1i14",
+      "pages": 72,
+      "summary": "English edition content-complete: Parts 0-9, front and back matter, the appendix, and the two companion-app references."
+    },
+    {
+      "iteration": 15,
+      "tag": "v1v1i15",
+      "pages": 78,
+      "summary": "Added Part 10, an eight-layer troubleshooting map that formalises the book's recurring 'which layer is lying to me?' thread."
+    },
+    {
+      "iteration": 16,
+      "tag": "v1v1i16",
+      "pages": 80,
+      "summary": "Added the toolchain section to 'How this book was made'; made the version tag auto-derive from the folder name; added the test_review.py content suite; expanded every acronym on first use."
+    },
+    {
+      "iteration": 17,
+      "tag": "v1v1i17",
+      "pages": 80,
+      "summary": "No distinct content change. The i16 bundle was unzipped into a folder named 17 and rebuilt, which the folder-driven tag turned into a v1v1i17 PDF. Recorded for continuity."
+    },
+    {
+      "iteration": 18,
+      "tag": "v1v1i18",
+      "pages": 80,
+      "summary": "Added config.toml (TOML project config that build.sh reads for the volume/version prefix) and this tracker.json. Added the total page count to the page footer (page X of Y). Moved version composition into src/mkversion.py. Refreshed HANDOVER and README."
+    },
+    {
+      "iteration": 19,
+      "tag": "v1v1i19",
+      "pages": 80,
+      "summary": "Renamed the build-byproducts folder from output/ to generated/, since it holds only regenerable artifacts. Pinned Python 3.14 as the project's target version (scripts stay standard-library only and run on 3.11+)."
+    },
+    {
+      "iteration": 20,
+      "tag": "v1v1i20",
+      "pages": 81,
+      "summary": "Added two screenshots to the book: a system update (pacman on CachyOS) in Part 2.4, and a node monitor (btop) in Part 8.7. Restructured the release bundle to embed an Archive.zip recovery snapshot (all sources plus the built PDF) inside the version folder, so the loose PDF can be deleted and recovered."
+    },
+    {
+      "iteration": 21,
+      "tag": "v1v1i21",
+      "pages": 81,
+      "summary": "Split the byproducts folder into temp/ (transient artifacts) and outputs/ (the final PDF). Renamed the recovery archive to match the version (e.g. 21.zip) and made build.sh self-heal it each run with zip -FS. Added MANIFEST.md, a full file inventory checked for completeness by the review suite. Made the release bundle extract flat, with no wrapper folder."
+    },
+    {
+      "iteration": 22,
+      "tag": "v1v1i22",
+      "pages": 82,
+      "summary": "Added Part 8.8, the reboot drill: a scheduled reboot to continuously test recovery, framed by the power-cut disaster and what survives it (only flushed-to-disk state, not in-memory state), which services return on boot, and a scheduled security audit (Lynis) as the hardening sibling."
+    },
+    {
+      "iteration": 23,
+      "tag": "v1v1i23",
+      "pages": 82,
+      "summary": "Build artifacts now land directly in temp/ via latexmk -output-directory, so the project root no longer fills with .aux/.log/.fls/.xdv files mid-build; only the finished PDF is moved out to outputs/. The full build is recorded to temp/build.log and the traces are kept rather than deleted, with a new './build.sh clean' subcommand that lists temp/ by size (du -ah, largest first) before removing it, so the one destructive disk operation is easy to oversee. Added a third companion-app screenshot (shot_session) showing the recorder in live multi-entry use, placed in the App 1 chapter after the feature list."
+    },
+    {
+      "iteration": 24,
+      "tag": "v1v1i24",
+      "pages": 82,
+      "summary": "Added an A5 edition built from the same manuscript: the paper is now a build parameter, not a forked tree. build.sh takes a4 (default), a5, or both, and writes the selected geometry into a generated src/paper.tex (the same pattern as src/version.tex), so there is one source of truth and no drift; A5 keeps the A4 build byte-for-byte unchanged. The two wide TikZ diagrams get a no-op-on-A4, scale-down-only-on-A5 \\ssfit wrapper, so A5 has zero overfull boxes (132 pages, expected on the smaller page). The A4 edition stays 82 pages. Added a clickable 'Cover' line as the first Contents entry and PDF bookmark, jumping to page 1, in both editions. Confirmed the release bundle carries its own recovery archive inside it (the inner <folder>.zip), and added a review check that fails if that archive is missing after a build, so the bundle can never ship without its self-backup."
+    },
+    {
+      "iteration": 25,
+      "tag": "v1v1i25",
+      "pages": 82,
+      "summary": "Fixed an A5-only title-page overflow: the cover's fixed vertical spacing was tuned for A4's height and pushed the final strap line onto a second page on the shorter A5 page, an orphan that then inherited the running header and the version tag. Crucially this raised no overfull box (\\end{titlepage} flows the excess silently), so the existing log checks never saw it. Made the title-page spacing elastic (each gap keeps its natural size but carries a minus-shrink component, with the central \\vfill absorbing positive slack), so A4 is unchanged at natural sizes while A5 compresses just enough to stay one page; A5 is now 131 pages. Added the test that would have caught it: test_build.py now asserts, for every PDF in outputs/ (A4 and A5 alike, closing the gap where A5 was exempt from the build checks), that the Contents heading lands on page 2, i.e. the title page is exactly one page. Also removed a literal em-dash that had been sitting in a preamble comment since the start (the dash rule had only ever been checked on the manuscript, not the LaTeX source) and extended the dash check to cover the hand-written .tex files."
+    },
+    {
+      "iteration": 26,
+      "tag": "v1v1i26",
+      "pages": 82,
+      "summary": "Made the closing colophon a deliberate page instead of an accidental orphan. The appendix fills its last text page, so the final italic line spilled onto a page of its own and sat at the top under the running header (APPENDIX: THE SPICY BIT), reading as a float on an empty page. It cannot be pulled back (no room for five more lines), so instead the colophon now forces its own page, drops the running header and footer so it is plainly an ending rather than a continuation, and is centred with a thin closing rule. A4 stays 82 pages (the colophon already had that page); A5 goes to 132 (it now claims a clean page there too). No structural test was added for this: unlike the silent title-page overflow, the page break here is explicit in the source, so there is no hidden failure mode to guard, and 'a page looks too empty' does not reduce to a crisp assertion the way 'the title page is one page' does."
+    },
+    {
+      "iteration": 27,
+      "tag": "v1v1i27",
+      "pages": 86,
+      "summary": "Major editorial revision driven by author direction, in five threads. (1) Reference distribution switched from the Debian/Ubuntu LTS family to Arch across the whole book: minimalism is framed as a security tactic (every installed package is extra attack surface, and no mainstream family ships as little as Arch), with the rolling-release tradeoff stated honestly and the recovery mindset plus backups leaned on a little harder. CachyOS and Manjaro are named as Arch-derived, desktop-ready on-ramps so the choice stays accessible to a first-time reader; bare-Arch-from-scratch is offered for the determined. Every reader-facing command flipped to pacman (2.4 update command, 2.7 verb block, 2.8 log path /var/log/pacman.log, 7.1 ufw install, the system-prompt and firewall Pointer examples); apt/dnf now appear only as even-handed contrasts. The CachyOS update screenshot now illustrates the exact pacman -Syu in the text. (2) Over-claims removed while keeping the sovereignty thesis: the 'no closed component' commitment became 'open source as high as the stack goes', and the firmware-floor qualification was deepened to make clear a modern machine is dozens of chips (disk/SSD controllers, NIC, GPU, embedded and power/management controllers), each with its own closed firmware/microcode, that NVIDIA's largely proprietary GPU drivers are an honest named dependency, that a full map is not obtainable in the current ecosystem, and that opening/mapping that floor is the standing goal for an AI-native, privacy-first ecosystem. A localized closed-driver note was added at the GPU-choice point in Part 1.4, and the appendix open-source passages were reconciled to match. (3) Token-speed honesty: the bandwidth lens now states explicitly that every tokens-per-second figure is an approximation (a window, not a point) and that speed falls as the context window fills (the running text and KV cache grow, so generation slows deep into a long chat); Part 4.6 cross-links this context-fill slowdown. The 4.8 GB derivation was corrected (a usable four-bit quantization averages a little above four bits per weight, about 0.6 bytes per parameter, not a flat half-byte), consistently in 1.2 and 4.2. (4) Volume 1 rescoped to home/personal only and made the explicit, prerequisite foundation of a sequential series: the 'you are now the entire IT department / helpdesk + developer + manager' framing was softened to running the information technology of your own home plus a solid first map for going further; the multi-user, serving-others manager scope was moved explicitly to Volume 2 (a school/building), with the series stated to build in order and require Volume 1. Part 8 intro and the 'next volumes' section updated to match. (5) Accessibility/thesis sharpened: a new front-matter passage states no prior technical background is needed (book + any basic LLM = the tools to run your own IT), that AI is assumed already available (cloud first, then local), and that the whole point is to anchor that capability to ground you own so it cannot be taken away or changed on you; the tagline gained a one-line accessibility promise. The mid-2026 frontier-labs claim was broadened (OpenAI and Anthropic most visibly, with Google and open-weight models close behind) to stay accurate and non-attackable. Build: A4 86 pages, A5 137 pages, zero overfull boxes, both test suites green. No em/en dashes, ASCII-only, acronyms intact (LTS now appears once, expanded, as the Arch contrast). Manuscript 1472 lines. This is a content iteration, not a lock."
+    },
+    {
+      "iteration": 28,
+      "tag": "v1v1i28",
+      "pages": 86,
+      "summary": "Build and test change (no manuscript edits): a bare ./build.sh now builds BOTH editions by default instead of A4 alone (the default mode token went from a4 to both), after it was easy to run the script and not notice the A5 was never produced. Two guards were added so a missing edition can never pass silently. (1) In build.sh, each edition built is verified to have produced its PDF before the run finishes: the mv into outputs/ is deliberately tolerant, so a per-edition check now fails the whole build loudly (non-zero exit, before the recovery archive is written) if outputs/<edition>.pdf is missing or empty. (2) In src/tests/test_build.py, a new check asserts both deliverables (A4 sovereign-stack-vol1.pdf and A5 sovereign-stack-vol1-a5.pdf) exist and are non-trivial (>50 KB), gated on a build having run so the standalone source-only pass still skips cleanly; verified by removing the A5 PDF and confirming the suite fails with exit 1. The overfull-hbox check was also generalised from the A4 log alone to every edition log (temp/sovereign-stack-vol1*.log), so an overfull box that appeared only in the A5 reflow would now be caught; the page-count ceiling stays A4-only on purpose (A5 is legitimately ~137 pages). README and HANDOVER build docs updated to show both-by-default and the new checks. Pages unchanged (A4 86, A5 137), zero overfull in both editions, both test suites green. Content iteration, not a lock."
+    },
+    {
+      "iteration": 29,
+      "tag": "v1v1i29",
+      "pages": 89,
+      "summary": "Polish pass toward a final version-1 manuscript, three threads. (1) The series gained a subtitle on the cover: 'A ground-up IT education for the age of AI', set in italic under the SOVEREIGN STACK title and above the rule; the title-page vertical spacing was re-tuned (a small clawback from the lower gaps) so both editions' covers still fit a single page, which test_build asserts. The subtitle lives only on the cover (frontmatter.tex), not in the body title block, to keep the acronym first-use ordering intact (the first expanded 'Information Technology (IT)' still precedes any bare 'IT' in the manuscript). (2) A new front-matter section, 'Why this book exists', was added right after the tagline. It states the book's reason for being in the author's voice but keeps everything personal out except the professional experience: a pre-LLM-era IT specialist and programmer who in time held responsibility for keeping systems running (no claim of managing people, which was dropped per the author), explaining that two changes finally make a career's knowledge transferable, the language model as an adaptive tutor (the book is the recipe, the model is the kitchen) and cheap open hardware plus open-source software turning rented intelligence into genuine sovereignty, and framing the volume as an accessible, start-at-home, networking-and-security-first foundation in the spirit of a friendly beginner's introduction rebuilt for the AI era. The earlier aphantasia note was deliberately omitted. (3) The appendix science gallery was expanded with three new figures from the second companion app (the research lab): two 'Relational Reality' multi-lens diagnostic dashboards (degree distribution, force-directed and spectral layouts, Laplacian spectrum, 2D/3D embeddings, all coloured by spectral angle) and a 'Topological Phase Transitions and Finite-Size Scaling' study spanning system sizes from a thousand to four million nodes, with an encouragement note: every figure was made by one person on ordinary hardware with a model as partner, so do not be afraid to point your own node at hard questions and do real science with the AI. Three image files added to assets/ (lab_relational_a.png, lab_relational_b.png, lab_scaling.png) and to MANIFEST. Build: A4 89 pages (up from 86), A5 140 (up from 137), zero overfull in both editions, both test suites green; recovery archive now 34 files. Still version 1: the author's personal proofread and the bump to v1v2 are the next step (i30)."
+    },
+    {
+      "iteration": 30,
+      "tag": "v1v1i30",
+      "pages": 89,
+      "summary": "Over-claim and humility pass toward a final version-1 manuscript, at the author's direction, with the iteration incremented (i29 to i30) and the version deliberately left at 1: the bump to v1v2 remains the author's own next step and was not done here, correcting the loose note in the i29 entry that had bundled the proofread and the version bump together. The driving concern is that a wrong assumption is the most expensive thing in troubleshooting (when stuck, the misleading belief is usually an unexamined certainty about where to look), so the book must not seed any. Four genuine over-claims were fixed and the rest of the manuscript was swept and found already disciplined. (1) The cover description on the title page (frontmatter.tex) was the main outlier and is corrected: the old line promised 'an AI agent you can reach over HTTPS from anywhere on Earth, with no cloud underneath it', which reads as if the reach itself were cloud-free, when worldwide reach always rides the internet, a shared, rented, cloud-like infrastructure. It now reads that the agent runs on the box you own, reached over the internet, with no cloud doing its thinking or holding its data: the no-cloud claim is scoped to compute and storage, and the internet dependency for reach is stated plainly. The cover strap line ('Reachable Securely From Anywhere, Depending on Nobody') and the thesis motto were kept, because the motto is the author's signed-off thesis, already qualified in the honest-qualification paragraph, and was not what the over-claim was about. (2) In the body, the home-node definition was scoped the same way: 'reachable from anywhere but dependent on nobody' became 'reachable from anywhere yet dependent on nobody for the thinking it does or the data it holds', and 'the internet becomes optional to it' became 'the internet is the road you take to reach it from outside, not something it runs on', so the operation-versus-reach distinction is explicit and the misreading that reach needs no internet is closed. (3) A genuine internal contradiction in the Part 6.9 benefits list was reconciled with the firmware floor: 'Because every layer is open ... the only entity that can alter your stack is you' flatly contradicted the book's own repeated honesty that a modern machine's firmware and microcode are nearly none of it open. The bullet now says the layers you can own are open and on your hardware, names the closed firmware floor (Part 0 and the appendix) as the one part you do not control while noting it cannot reach up and rewrite the software you run, and ends that everything above it is yours to keep, change, or replace. (4) The closing chapter's 'one machine you can hold in your hands and understand completely' became 'learn from the ground up', since the appendix is explicit that you cannot audit a transistor and the dream of verifying everything quietly fails; the new phrasing is honest about the learning journey and echoes the cover subtitle. The full pass confirmed these four were the complete set: every other absolute-sounding phrase is either accurately scoped (local compute, the LAN-only reach in Part 6.2, password brute-force genuinely removed once key-auth is on in Part 7.2), the book deliberately disclaiming absolutes (the no-guarantee rule on page one and in Part 2, the 'nothing has to be perfect' rule, the token-speed approximation note, the denial-of-service residue admitted in Part 7.4), or the appendix's deliberate poetic register on cryptographic infeasibility, all left untouched. The LLLM coinage (Local Large Language Model, three Ls, one M) was checked and confirmed intentional and load-bearing, defined on first use and paid off in the appendix, not a typo, and left as is. Build: A4 89 pages, A5 140 pages, zero overfull boxes in both editions, both test suites green. No em or en dashes, ASCII-only, acronyms intact. Still version 1: the personal proofread and the bump to v1v2 are the author's next step."
+    }
+  ]
+}
