@@ -1,0 +1,69 @@
+\begin{titlepage}
+\thispagestyle{empty}
+% A first, visible "Omslag" line in the Contents (and a matching PDF bookmark),
+% both pointing at this title page, so the table of contents opens with a
+% clickable entry back to page 1 of the book. (Dutch edition: "Cover" -> "Omslag",
+% "Contents" -> "Inhoud"; test_build.py checks for these two words on page 2.)
+\phantomsection
+\addcontentsline{toc}{chapter}{Omslag}
+\AddToShipoutPictureBG*{\put(\LenToUnit{0.5683\paperwidth},\LenToUnit{0.5\paperheight}){\makebox(0,0){\includegraphics[width=0.84\paperwidth]{bg_titlepage.png}}}}
+\centering
+% Title-page vertical spacing is elastic, identical to the default edition, so the
+% one page fits both paper sizes and absorbs the slightly greater length of the
+% Dutch text. The \vfill below takes all positive slack; on A4 every gap sits at
+% its natural size. test_build.py asserts the Contents ("Inhoud") lands on page 2
+% for this edition too, which catches a title page that has spilled.
+\vspace*{1.9cm minus 1cm}
+
+{\sffamily\bfseries\color{accent}\fontsize{46}{50}\selectfont SOVEREIGN STACK\par}
+
+\vspace{9pt minus 3pt}
+{\sffamily\itshape\normalsize\color{softblack!80} Een IT-opleiding vanaf de grond, voor het tijdperk van AI\par}
+
+\vspace{13pt minus 5pt}
+{\color{rulegray}\rule{0.66\textwidth}{1.1pt}\par}
+\vspace{22pt minus 8pt}
+
+{\sffamily\large\color{accentlt}\textbf{DEEL 1}\par}
+\vspace{6pt minus 2pt}
+{\sffamily\bfseries\color{softblack}\fontsize{30}{34}\selectfont Home Node\par}
+
+\vspace{30pt minus 12pt}
+
+{\sffamily\large\color{softblack} Bouw je eigen lokale AI thuis,\\[3pt]
+veilig bereikbaar vanaf overal\par}
+
+\vspace{26pt minus 10pt}
+
+{\itshape\normalsize\color{softblack!75}
+Een fundament-starterkit voor een persoon en een machine: van kale\\
+hardware tot een AI-agent die draait op de doos die je bezit, bereikt\\
+via het internet, met geen cloud die het denkwerk doet of de gegevens\\
+bewaart, en het netwerk en de beveiliging om elke stap te begrijpen.\par}
+
+\vfill
+
+{\sffamily\footnotesize\color{softblack!60}
+Een reeks in meerdere delen. Deel 1 behandelt het thuis, een persoon en een node.\\
+Latere delen dragen dezelfde methode naar buiten: de school, de universiteit, de stad.\par}
+\vspace{16pt minus 6pt}
+{\sffamily\small\color{accentlt}\textbf{Eerste editie}\par}
+\vspace{4pt minus 1pt}
+{\sffamily\footnotesize\color{softblack!55} Een levend veldhandboek, een kaart, geen heilige tekst.\par}
+\vspace{1.0cm minus 0.7cm}
+\end{titlepage}
+
+% Count the cover as page 1 (see the default edition's frontmatter.tex for the
+% full explanation): the titlepage environment resets the page counter to 1 at
+% its end, so setting it to 2 here makes the printed footer number equal the
+% physical PDF page on every page, and \pageref{LastPage} follows to the end.
+\setcounter{page}{2}
+
+\clearpage
+\thispagestyle{plain}
+{\sffamily\Large\bfseries\color{accent}Inhoud\par}\vspace{6pt}
+{\color{rulegray}\hrule height 0.8pt}\vspace{10pt}
+\makeatletter
+\@starttoc{toc}
+\makeatother
+\clearpage

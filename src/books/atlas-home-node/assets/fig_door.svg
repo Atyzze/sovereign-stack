@@ -1,0 +1,84 @@
+<svg viewBox="0 0 880 410" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_door: one door, one desk, many rooms (Atlas 6.1/6.2) -->
+  <defs>
+    <marker id="dr_ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#1F5673"/>
+    </marker>
+    <marker id="dr_ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#2E7D4F"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="410" fill="#FFFFFF"/>
+
+  <!-- zones -->
+  <rect x="20" y="44" width="320" height="300" rx="6" fill="#EAF1F4" stroke="#1F5673" stroke-width="1.3"/>
+  <text x="40" y="72" font-size="15" font-weight="bold" fill="#1F5673">THE WAN</text>
+  <rect x="340" y="44" width="516" height="300" rx="6" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.5"/>
+  <text x="836" y="72" text-anchor="end" font-size="15" font-weight="bold" fill="#1B5E3A">YOUR HOUSE</text>
+
+  <!-- the phone, far away -->
+  <rect x="52" y="130" width="46" height="78" rx="7" fill="#FFFFFF" stroke="#1F5673" stroke-width="1.5"/>
+  <rect x="60" y="142" width="30" height="46" rx="2" fill="#EAF1F4" stroke="#1F5673" stroke-width="0.8"/>
+  <circle cx="75" cy="198" r="3.5" fill="none" stroke="#1F5673" stroke-width="1.2"/>
+  <text x="75" y="230" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1A1A1A">your phone</text>
+  <text x="75" y="246" text-anchor="middle" font-size="11" fill="#6A7A6A">on cellular, far away</text>
+
+  <!-- the request -->
+  <text x="192" y="126" text-anchor="middle" font-size="11" font-family="DejaVu Sans Mono, monospace" fill="#1A1A1A">https://yourname.example/voice</text>
+  <line x1="104" y1="148" x2="340" y2="148" stroke="#1F5673" stroke-width="2" marker-end="url(#dr_ah)"/>
+  <!-- padlock on the span -->
+  <rect x="203" y="156" width="14" height="11" rx="2" fill="#1B5E3A"/>
+  <path d="M206 156 v-4 a4 4 0 0 1 8 0 v4" fill="none" stroke="#1B5E3A" stroke-width="1.6"/>
+  <text x="226" y="166" font-size="11" fill="#1B5E3A" font-weight="bold">HTTPS (6.5)</text>
+  <text x="212" y="186" text-anchor="middle" font-size="11" fill="#6A7A6A">DNS turns the name into</text>
+  <text x="212" y="200" text-anchor="middle" font-size="11" fill="#6A7A6A" font-family="DejaVu Sans Mono, monospace">1.1.1.1  (6.3)</text>
+
+  <!-- router straddling the wall -->
+  <rect x="306" y="118" width="112" height="60" rx="4" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.6"/>
+  <text x="362" y="142" text-anchor="middle" font-size="13" font-weight="bold" fill="#1B5E3A">router</text>
+  <text x="362" y="160" text-anchor="middle" font-size="10.5" fill="#6A7A6A">forwards :443 (6.2)</text>
+
+  <line x1="418" y1="148" x2="470" y2="148" stroke="#2E7D4F" stroke-width="1.8" marker-end="url(#dr_ahg)"/>
+
+  <!-- the reception desk -->
+  <rect x="474" y="112" width="150" height="72" rx="4" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.8"/>
+  <text x="549" y="138" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1B5E3A">reverse proxy</text>
+  <text x="549" y="156" text-anchor="middle" font-size="11" fill="#6A7A6A" font-style="italic">the reception desk (6.1)</text>
+  <text x="549" y="173" text-anchor="middle" font-size="10.5" fill="#6A7A6A">the only face the WAN sees</text>
+
+  <!-- the rooms -->
+  <g font-size="12.5" fill="#1A1A1A">
+    <rect x="694" y="88" width="148" height="60" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="768" y="106" text-anchor="middle" font-weight="bold" fill="#1B5E3A">static app files</text>
+    <text x="768" y="124" text-anchor="middle" font-size="10.5" font-family="DejaVu Sans Mono, monospace" fill="#1A1A1A">192.168.1.30:8080</text>
+    <text x="768" y="140" text-anchor="middle" font-size="9.5" fill="#6A7A6A">another box on your LAN (6.6)</text>
+
+    <rect x="694" y="172" width="148" height="60" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="768" y="190" text-anchor="middle" font-weight="bold" fill="#1B5E3A">speech service</text>
+    <text x="768" y="208" text-anchor="middle" font-size="10.5" font-family="DejaVu Sans Mono, monospace" fill="#1A1A1A">127.0.0.1:5001</text>
+    <text x="768" y="224" text-anchor="middle" font-size="9.5" fill="#6A7A6A">same box as the desk (4.3)</text>
+
+    <rect x="694" y="256" width="148" height="60" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="768" y="274" text-anchor="middle" font-weight="bold" fill="#1B5E3A">your service</text>
+    <text x="768" y="292" text-anchor="middle" font-size="10.5" font-family="DejaVu Sans Mono, monospace" fill="#1A1A1A">127.0.0.1:5002</text>
+    <text x="768" y="308" text-anchor="middle" font-size="9.5" fill="#6A7A6A">same box, its own port (6.7)</text>
+  </g>
+
+  <!-- routes -->
+  <g stroke="#2E7D4F" stroke-width="1.5" fill="none">
+    <path d="M624 130 L658 130 L658 118 L690 118" marker-end="url(#dr_ahg)"/>
+    <path d="M624 166 L658 166 L658 203 L690 203" marker-end="url(#dr_ahg)"/>
+    <path d="M600 184 L600 287 L690 287" marker-end="url(#dr_ahg)"/>
+  </g>
+  <g font-size="10.5" font-family="DejaVu Sans Mono, monospace" fill="#2E7D4F">
+    <text x="648" y="110">/voice</text>
+    <text x="686" y="194" text-anchor="end">/transcribe</text>
+    <text x="608" y="248">/api</text>
+  </g>
+
+  <text x="360" y="332" font-size="11.5" fill="#8A5A1B" font-style="italic">no room has a street door; the desk routes to any socket it can reach</text>
+  <text x="20" y="388" font-size="13" fill="#1A1A1A">One certificate, one open port, one guarded desk. Adding a service means adding a route, never opening a new door.</text>
+</svg>

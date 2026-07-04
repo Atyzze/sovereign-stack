@@ -1,0 +1,83 @@
+<svg viewBox="0 0 880 430" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_rag: retrieval-augmented generation in one picture (Atlas 5.1) -->
+  <defs>
+    <marker id="rag_ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#6A7A6A"/>
+    </marker>
+    <marker id="rag_ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#2E7D4F"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="430" fill="#FFFFFF"/>
+
+  <!-- ===== upper lane: build once ===== -->
+  <text x="30" y="40" font-size="15" font-weight="bold" fill="#1B5E3A">BUILD ONCE</text>
+  <text x="140" y="40" font-size="12" fill="#6A7A6A" font-style="italic">an overnight job (5.3)</text>
+
+  <g font-size="13" fill="#1A1A1A">
+    <rect x="30" y="58" width="150" height="64" rx="4" fill="#F6F6F3" stroke="#D7D7CE" stroke-width="1.3"/>
+    <text x="105" y="84" text-anchor="middle" font-weight="bold">your corpus</text>
+    <text x="105" y="102" text-anchor="middle" font-size="11.5" fill="#6A7A6A">Wikipedia, notes, docs</text>
+
+    <rect x="232" y="58" width="130" height="64" rx="4" fill="#F6F6F3" stroke="#D7D7CE" stroke-width="1.3"/>
+    <text x="297" y="84" text-anchor="middle" font-weight="bold">chunk</text>
+    <text x="297" y="102" text-anchor="middle" font-size="11.5" fill="#6A7A6A">into passages</text>
+
+    <rect x="414" y="58" width="130" height="64" rx="4" fill="#F6F6F3" stroke="#D7D7CE" stroke-width="1.3"/>
+    <text x="479" y="84" text-anchor="middle" font-weight="bold">embed</text>
+    <text x="479" y="102" text-anchor="middle" font-size="11.5" fill="#6A7A6A">meaning to vectors</text>
+
+    <!-- the store: a cylinder -->
+    <path d="M628 66 a66 12 0 0 1 132 0 v52 a66 12 0 0 1 -132 0 z" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.5"/>
+    <path d="M628 66 a66 12 0 0 0 132 0" fill="none" stroke="#1B5E3A" stroke-width="1.5"/>
+    <text x="694" y="94" text-anchor="middle" font-weight="bold" fill="#1B5E3A">vector store</text>
+    <text x="694" y="112" text-anchor="middle" font-size="11.5" fill="#6A7A6A">index on disk (5.3)</text>
+  </g>
+  <g stroke="#6A7A6A" stroke-width="1.4" fill="none">
+    <line x1="180" y1="90" x2="228" y2="90" marker-end="url(#rag_ah)"/>
+    <line x1="362" y1="90" x2="410" y2="90" marker-end="url(#rag_ah)"/>
+    <line x1="544" y1="90" x2="622" y2="90" marker-end="url(#rag_ah)"/>
+  </g>
+
+  <!-- divider -->
+  <line x1="30" y1="158" x2="850" y2="158" stroke="#C2C2BA" stroke-width="1" stroke-dasharray="3 5"/>
+
+  <!-- ===== lower lane: ask daily ===== -->
+  <text x="30" y="192" font-size="15" font-weight="bold" fill="#2E7D4F">ASK DAILY</text>
+  <text x="126" y="192" font-size="12" fill="#6A7A6A" font-style="italic">milliseconds, fully offline</text>
+
+  <g font-size="13" fill="#1A1A1A">
+    <rect x="30" y="212" width="150" height="64" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="105" y="238" text-anchor="middle" font-weight="bold" fill="#1B5E3A">your question</text>
+    <text x="105" y="256" text-anchor="middle" font-size="11.5" fill="#6A7A6A">becomes one vector</text>
+
+    <rect x="232" y="212" width="180" height="64" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="322" y="238" text-anchor="middle" font-weight="bold" fill="#1B5E3A">nearest passages</text>
+    <text x="322" y="256" text-anchor="middle" font-size="11.5" fill="#6A7A6A">found by meaning (4.4)</text>
+
+    <rect x="464" y="212" width="160" height="64" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="544" y="238" text-anchor="middle" font-weight="bold" fill="#1B5E3A">local model</text>
+    <text x="544" y="256" text-anchor="middle" font-size="11.5" fill="#6A7A6A">passages + question</text>
+
+    <rect x="676" y="212" width="174" height="64" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.6"/>
+    <text x="763" y="238" text-anchor="middle" font-weight="bold" fill="#1B5E3A">grounded answer</text>
+    <text x="763" y="256" text-anchor="middle" font-size="11.5" fill="#6A7A6A">with its source passage</text>
+  </g>
+  <g stroke="#2E7D4F" stroke-width="1.5" fill="none">
+    <line x1="180" y1="244" x2="228" y2="244" marker-end="url(#rag_ahg)"/>
+    <line x1="412" y1="244" x2="460" y2="244" marker-end="url(#rag_ahg)"/>
+    <line x1="624" y1="244" x2="672" y2="244" marker-end="url(#rag_ahg)"/>
+  </g>
+  <!-- the store answers the lookup -->
+  <path d="M694 130 L694 180 L322 180 L322 208" fill="none" stroke="#1B5E3A" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#rag_ahg)"/>
+
+  <!-- why it matters -->
+  <rect x="30" y="312" width="820" height="76" rx="4" fill="#FFFFFF" stroke="#C2C2BA" stroke-width="1.1"/>
+  <rect x="30" y="312" width="4" height="76" fill="#2E7D4F"/>
+  <text x="52" y="340" font-size="12.5" fill="#1A1A1A">The model is not retrained and remembers nothing between questions; the knowledge sits in the store, the model only reads</text>
+  <text x="52" y="360" font-size="12.5" fill="#1A1A1A">what retrieval hands it. Swap the corpus and the same model answers from different knowledge; swap the model and keep the</text>
+  <text x="52" y="380" font-size="12.5" fill="#1A1A1A">library. That separation is what makes the whole thing yours.</text>
+</svg>

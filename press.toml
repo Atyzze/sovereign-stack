@@ -1,0 +1,50 @@
+# ============================ SOVEREIGN PRESS - workshop configuration ============================
+# This file configures the press as a whole, not any single book. Each book is a
+# folder under books/ that contains a book.toml; build.py auto-discovers them, so
+# adding a new volume is just dropping in a new folder. You never list books here
+# unless you want to pin their order or hide one from a bare `build.py` run.
+#
+# The build is incremental: build.py hashes every input that affects a book's PDF
+# (its manuscript, its book.toml, its frontmatter, its assets, and the shared
+# machinery below) and rebuilds a book only when that hash changes. So editing one
+# manuscript rebuilds one PDF; editing the shared preamble rebuilds all of them;
+# rerunning with nothing changed rebuilds nothing.
+
+[press]
+name = "Sovereign Press"
+# The shared machinery every book is built with. Changing any of these is treated
+# as a change to every book (they all depend on it), so all PDFs rebuild.
+shared_preamble   = "shared/preamble.tex"
+shared_preprocess = "shared/preprocess.py"
+shared_mkversion  = "shared/mkversion.py"
+
+[order]
+# Optional. The sequence a bare `build.py` walks, and the order `build.py list`
+# prints. Slugs not named here still build, after these, in alphabetical order.
+# Hiding a book from the default run: see `enabled = false` in its book.toml.
+books = [
+  "atlas-home-node",
+  "primer-first-contact",
+]
+
+[defaults]
+# Pandoc/LaTeX defaults shared by every book. A book.toml [build] block may
+# override any of these for one book without touching the others.
+engine    = "xelatex"
+mainfont  = "TeX Gyre Pagella"
+sansfont  = "TeX Gyre Heros"
+monofont  = "DejaVu Sans Mono"
+paper     = "a4paper"
+toplevel  = "chapter"           # pandoc --top-level-division
+page_ceiling = 400              # tests warn if any book exceeds this many pages
+
+# ---- The pairing: how the two books line up ----------------------------------
+# The Primer (Volume 0) is the on-ramp; the Atlas is the map, and Volume 1 (Home
+# Node) is its first and, so far, only volume. Two volumes exist today: the Primer
+# takes a reader from "can use a search engine" to "ready to hand the Atlas to
+# their own AI", and the Atlas's Volume 1 takes them the rest of the way. Whether
+# later Atlas volumes (Volume 2 onward) ever exist is deliberately left open and
+# depends on whether these first two land well; nothing here promises them, and
+# nothing blocks them.
+[crossmap]
+"primer-first-contact" = "the on-ramp to the whole Atlas"

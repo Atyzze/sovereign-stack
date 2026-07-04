@@ -1,0 +1,76 @@
+<svg viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_loop: one agent's loop, then a small society of them (Atlas 8.1) -->
+  <defs>
+    <marker id="lp_ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#2E7D4F"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="860" height="430" fill="#FFFFFF"/>
+
+  <text x="30" y="40" font-size="15" font-weight="bold" fill="#1B5E3A">ONE AGENT</text>
+  <text x="30" y="58" font-size="12" fill="#6A7A6A" font-style="italic">a small script on a timer, looping</text>
+
+  <!-- the loop -->
+  <g stroke="#2E7D4F" stroke-width="1.8" fill="none">
+    <path d="M 292 99 C 326 99, 350 132, 350 180" marker-end="url(#lp_ah)"/>
+    <path d="M 350 238 C 350 286, 326 323, 296 323" marker-end="url(#lp_ah)"/>
+    <path d="M 168 323 C 134 323, 110 290, 110 242" marker-end="url(#lp_ah)"/>
+    <path d="M 110 184 C 110 136, 134 99, 164 99" marker-end="url(#lp_ah)"/>
+  </g>
+
+  <!-- four stations -->
+  <g font-size="13" text-anchor="middle">
+    <rect x="172" y="76" width="116" height="46" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <text x="230" y="96" font-weight="bold" fill="#1B5E3A">perceive</text>
+    <text x="230" y="113" font-size="10.5" fill="#6A7A6A">logs, feeds, sensors</text>
+
+    <rect x="292" y="188" width="116" height="46" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <text x="350" y="208" font-weight="bold" fill="#1B5E3A">decide</text>
+    <text x="350" y="225" font-size="10.5" fill="#6A7A6A">your local model</text>
+
+    <rect x="172" y="300" width="116" height="46" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <text x="230" y="320" font-weight="bold" fill="#1B5E3A">act</text>
+    <text x="230" y="337" font-size="10.5" fill="#6A7A6A">write, flag, file</text>
+
+    <rect x="52" y="188" width="116" height="46" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <text x="110" y="208" font-weight="bold" fill="#1B5E3A">report</text>
+    <text x="110" y="225" font-size="10.5" fill="#6A7A6A">to you, in the digest</text>
+  </g>
+
+  <!-- the one gate -->
+  <rect x="120" y="366" width="220" height="40" rx="4" fill="#FFFFFF" stroke="#8A5A1B" stroke-width="1.4"/>
+  <text x="230" y="383" text-anchor="middle" font-size="11" font-weight="bold" fill="#8A5A1B">anything that spends money or changes</text>
+  <text x="230" y="398" text-anchor="middle" font-size="11" font-weight="bold" fill="#8A5A1B">the world waits for one human click (8.4)</text>
+  <line x1="230" y1="348" x2="230" y2="364" stroke="#8A5A1B" stroke-width="1.3" stroke-dasharray="3 3"/>
+
+  <!-- divider -->
+  <line x1="460" y1="44" x2="460" y2="400" stroke="#C2C2BA" stroke-width="1" stroke-dasharray="3 5"/>
+
+  <!-- the society -->
+  <text x="496" y="40" font-size="15" font-weight="bold" fill="#1B5E3A">A SMALL SOCIETY OF THEM</text>
+  <text x="496" y="58" font-size="12" fill="#6A7A6A" font-style="italic">each tiny, each fenced by its own tests (Part 9)</text>
+
+  <g font-size="13">
+    <rect x="496" y="84" width="334" height="62" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="514" y="110" font-weight="bold" fill="#1B5E3A">the monitor</text>
+    <text x="514" y="130" font-size="11.5" fill="#6A7A6A">reads the node's logs and health, raises quiet flags (8.3)</text>
+
+    <rect x="496" y="162" width="334" height="62" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="514" y="188" font-weight="bold" fill="#1B5E3A">the keeper</text>
+    <text x="514" y="208" font-size="11.5" fill="#6A7A6A">watches a failing disk, drafts the order; you click (8.4)</text>
+
+    <rect x="496" y="240" width="334" height="62" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <text x="514" y="266" font-weight="bold" fill="#1B5E3A">the herald</text>
+    <text x="514" y="286" font-size="11.5" fill="#6A7A6A">writes the private morning digest from your sources (8.6)</text>
+  </g>
+
+  <!-- the keeper of the keepers -->
+  <rect x="496" y="322" width="334" height="42" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.5"/>
+  <text x="663" y="341" text-anchor="middle" font-size="12" font-weight="bold" fill="#1B5E3A">systemd keeps them all alive:</text>
+  <text x="663" y="357" text-anchor="middle" font-size="12" font-family="DejaVu Sans Mono, monospace" fill="#1A1A1A">Restart=always  (2.6, 8.2)</text>
+
+  <text x="496" y="394" font-size="11.5" fill="#6A7A6A" font-style="italic">all bound to 127.0.0.1, talking plain local HTTP (8.2)</text>
+</svg>

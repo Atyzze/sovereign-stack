@@ -1,435 +1,529 @@
 #!/usr/bin/env python3
-"""Content-review tests for Sovereign Stack, Volume 1.
+"""Content-review tests for Sovereign Press (all books).
 
-This is the *review* gate. It is a companion to ``test_build.py`` (which guards
-the build invariants: ASCII, no em/en dashes, no overfull boxes, page ceiling)
-and it checks the things a careful human reviewer would otherwise have to read
-the whole book to verify, every single iteration, by hand:
+This is the *review* gate, the companion to test_build.py (which guards the
+build invariants). It checks the things a careful human reviewer would otherwise
+have to read each whole book to verify, every iteration, by hand. It is
+multi-book: it discovers every book and runs the universal checks on each, plus
+the structural checks that book opts into via a [review] table in its book.toml
+(Part numbering, section numbering, Pointer boxes, acronym expansion). A book
+that declares none of those simply gets the universal checks.
 
-  * every acronym is spelled out in full near its first use,
-  * the version tag in the corner of the page matches the folder name (the
-    project's own convention: the folder is named after the iteration number,
-    and build.sh derives the tag from it, so the two can never drift),
-  * the build actually produced a PDF (the baseline definition of "it works"),
-  * the structure is sound: contiguous Part numbering, well-formed section
-    numbers, well-formed Pointer boxes, every referenced image present, every
-    "Part N" cross-reference pointing at a Part that exists,
-  * and the prose is clean: no placeholder text, no stray tabs or trailing
-    whitespace, balanced code fences, no accidental ASCII drift.
+Universal, every book:
+  * ASCII-only, no em/en dashes (an independent re-check of the build rule),
+  * no placeholder text, no stray tabs or trailing whitespace, balanced fences,
+  * no accidental doubled words (advisory),
+  * every referenced image exists, and the book's assets/ has no dead weight,
+  * the build produced a non-trivial PDF.
 
-It is deliberately deterministic and uses only the Python standard library: no
-network, no running model, no nondeterministic output. (A local model such as
-Ollama could be wired in for a softer, semantic review pass, but a test suite
-should give the same verdict every time it runs, so the hard checks below ask
-nothing of any service.)
+Opt-in via [review] in book.toml:
+  * expect_part_headings  -> "# PART N:" numbering is contiguous from 0,
+  * expect_section_numbers-> "## N.M" numbers run 1..M within each Part,
+  * require_pointers      -> Pointer boxes are present and well-formed,
+  * expand_acronyms       -> every acronym is spelled out near first use,
+      with acronyms_preview_ok / acronyms_described_ok as documented exceptions.
 
-Run from the project root (source checks always; the version, overfull and page
-checks need a prior ``./build.sh``)::
+Press-wide:
+  * MANIFEST.md names every source file and folder,
+  * recovery.zip is present and non-trivial.
 
-    python3 src/tests/test_review.py
+Deterministic, standard library only: same verdict every run. Run from the press
+root (source checks always; the PDF checks need a prior build):
 
-Exit code 0 means every hard check passed. This is the book practising its own
-thesis from Part 9: functionality is a list of tests, and you own them.
+    python3 tests/test_review.py
+    python3 tests/test_review.py atlas-home-node
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
+from collections import defaultdict
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MD = os.path.join(ROOT, "sovereign-stack-vol1.md")
-PREAMBLE = os.path.join(ROOT, "src", "preamble.tex")
-VERSION_TEX = os.path.join(ROOT, "src", "version.tex")
-PDF = os.path.join(ROOT, "outputs", "sovereign-stack-vol1.pdf")
-LOG = os.path.join(ROOT, "temp", "sovereign-stack-vol1.log")
-ASSETS = os.path.join(ROOT, "assets")
-CONFIG = os.path.join(ROOT, "config.toml")
-TRACKER = os.path.join(ROOT, "tracker.json")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _common as C  # noqa: E402
 
 fails, warns = [], []
 
 
 def check(name, ok, detail=""):
-    print(f"[{'PASS' if ok else 'FAIL'}] {name}" + (f"  ({detail})" if detail else ""))
+    print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f"  ({detail})" if detail else ""))
     if not ok:
         fails.append(name)
 
 
 def warn(name, ok, detail=""):
-    print(f"[{'PASS' if ok else 'warn'}] {name}" + (f"  ({detail})" if detail else ""))
+    print(f"  [{'PASS' if ok else 'warn'}] {name}" + (f"  ({detail})" if detail else ""))
     if not ok:
         warns.append(name)
 
 
 def skip(name, why):
-    print(f"[skip] {name}  ({why})")
+    print(f"  [skip] {name}  ({why})")
 
 
-# ----------------------------------------------------------------------------
-# Load the manuscript and derive a few views of it.
-# ----------------------------------------------------------------------------
-raw = open(MD, encoding="utf-8").read()
-lines = raw.split("\n")
-
-# Lines split into prose / code, tracking fenced (```), raw-latex (```{=latex})
-# blocks and heading lines. Headings are often ALL CAPS and are not prose.
-prose_lines, fence_count, in_code = [], 0, False
-prose_line_numbers = []
-for n, l in enumerate(lines, 1):
-    s = l.strip()
-    if s.startswith("```"):
-        fence_count += 1
-        in_code = not in_code
-        continue
-    if in_code:
-        continue
-    if s.startswith("#"):
-        continue
-    prose_lines.append(l)
-    prose_line_numbers.append(n)
-prose_raw = "\n".join(prose_lines)
-
-# Prose with inline code spans and emphasis markers removed, for word/acronym
-# checks (so `127.0.0.1:PORT` and **LAN** do not distort the text).
-prose = re.sub(r"`[^`]*`", " ", prose_raw)
-prose = prose.replace("**", "").replace("*", "")
+# A general IT glossary. A book only has an acronym checked if it both uses it
+# and opts in via [review].expand_acronyms; otherwise this is inert.
+ACRONYMS = {
+    "LAN": "Local Area Network", "WAN": "Wide Area Network",
+    "NAT": "Network Address Translation", "CGNAT": "carrier-grade NAT",
+    "DNS": "Domain Name System", "DDNS": "dynamic DNS", "IP": "Internet Protocol",
+    "DHCP": "Dynamic Host Configuration Protocol", "SSH": "Secure Shell",
+    "VPN": "Virtual Private Network", "TLS": "Transport Layer Security",
+    "HTTPS": "HyperText Transfer Protocol Secure",
+    "HTTP": "HyperText Transfer Protocol",
+    "API": "Application Programming Interface", "URL": "Uniform Resource Locator",
+    "GPU": "Graphics Processing Unit", "CPU": "Central Processing Unit",
+    "RAM": "Random Access Memory", "VRAM": "Video RAM", "SSD": "Solid State Drive",
+    "UEFI": "Unified Extensible Firmware Interface", "BIOS": "Basic Input/Output System",
+    "LLM": "Large Language Model", "RAG": "Retrieval-Augmented Generation",
+    "PWA": "progressive web app", "LTS": "Long-Term Support",
+    "UPS": "uninterruptible power supply", "WPA": "WiFi Protected Access",
+    "HBM": "High Bandwidth Memory", "GDDR": "Graphics Double Data Rate",
+    "DDR": "Double Data Rate", "HTML": "HyperText Markup Language",
+    "CSS": "Cascading Style Sheets", "JS": "JavaScript",
+    "JSON": "JavaScript Object Notation", "CSV": "Comma-Separated Values",
+    "TOML": "Tom's Obvious Minimal Language", "PDF": "Portable Document Format",
+    "GUI": "graphical user interface", "IT": "Information Technology",
+    "EM": "electromagnetic", "VAT": "Value Added Tax",
+}
 
 
 def collapse(s):
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
-print("=" * 70)
-print("CONTENT REVIEW  ::  sovereign-stack-vol1.md")
-print("=" * 70)
+def split_prose(lines):
+    """Lines outside code fences and not headings, with their 1-based numbers."""
+    prose_lines, prose_nums, fence_count, in_code = [], [], 0, False
+    for n, l in enumerate(lines, 1):
+        s = l.strip()
+        if s.startswith("```"):
+            fence_count += 1
+            in_code = not in_code
+            continue
+        if in_code or s.startswith("#"):
+            continue
+        prose_lines.append(l)
+        prose_nums.append(n)
+    return prose_lines, prose_nums, fence_count
 
-# ============================================================================
-# 1. ACRONYMS: spelled out in full near first use.
-# ============================================================================
-WINDOW = 80
-ACRONYMS = {
-    "LAN": "Local Area Network",
-    "WAN": "Wide Area Network",
-    "NAT": "Network Address Translation",
-    "CGNAT": "carrier-grade NAT",
-    "DNS": "Domain Name System",
-    "DDNS": "dynamic DNS",
-    "IP": "Internet Protocol",
-    "DHCP": "Dynamic Host Configuration Protocol",
-    "SSH": "Secure Shell",
-    "TLS": "Transport Layer Security",
-    "HTTPS": "HyperText Transfer Protocol Secure",
-    "HTTP": "HyperText Transfer Protocol",
-    "API": "Application Programming Interface",
-    "URL": "Uniform Resource Locator",
-    "GPU": "Graphics Processing Unit",
-    "CPU": "Central Processing Unit",
-    "RAM": "Random Access Memory",
-    "VRAM": "Video RAM",
-    "SSD": "Solid State Drive",
-    "UEFI": "Unified Extensible Firmware Interface",
-    "BIOS": "Basic Input/Output System",
-    "LLM": "Large Language Model",
-    "RAG": "Retrieval-Augmented Generation",
-    "PWA": "progressive web app",
-    "LTS": "Long-Term Support",
-    "UPS": "uninterruptible power supply",
-    "WPA": "WiFi Protected Access",
-    "HBM": "High Bandwidth Memory",
-    "GDDR": "Graphics Double Data Rate",
-    "DDR": "Double Data Rate",
-    "HTML": "HyperText Markup Language",
-    "CSS": "Cascading Style Sheets",
-    "JS": "JavaScript",
-    "JSON": "JavaScript Object Notation",
-    "CSV": "Comma-Separated Values",
-    "TOML": "Tom's Obvious Minimal Language",
-    "PDF": "Portable Document Format",
-    "GUI": "graphical user interface",
-    "IT": "Information Technology",
-    "EM": "electromagnetic",
-    "VAT": "Value Added Tax",
-}
-acro_missing, acro_used = [], 0
-# A few networking/ops terms are signposted in the chapter-preview bullets of
-# "How to read this book" before being formally defined in their home section
-# (LAN/WAN in 0.2, SSH in 2.5, NAT in 3.3, DNS in 3.8). Expanding them inside the
-# compressed preview list would nest parentheses and weigh down a deliberately
-# light list, so for these the rule relaxes to "defined somewhere in the book"
-# rather than "at first occurrence". Every other acronym must be expanded at
-# first use. (Remove a term from this set to enforce the strict rule on it.)
-PREVIEW_INTRODUCED = {"LAN", "WAN", "NAT", "DNS", "SSH"}
-for ac, exp in sorted(ACRONYMS.items()):
-    m = re.search(r"\b" + re.escape(ac) + r"\b", prose)
-    if not m:
-        continue
-    acro_used += 1
-    i = m.start()
-    if ac in PREVIEW_INTRODUCED:
-        ok = collapse(exp) in collapse(prose)                       # anywhere
+
+def review_book(slug):
+    p = C.book_paths(slug)
+    rev = C.book_toml(slug).get("review", {})
+    print(f"\n[{slug}]  (tag {C.compose_tag(slug)})")
+
+    if not os.path.exists(p["manuscript"]):
+        check("manuscript.md present", False, f"missing: books/{slug}/manuscript.md")
+        return
+
+    raw = open(p["manuscript"], encoding="utf-8").read()
+    lines = raw.split("\n")
+    prose_lines, prose_nums, fence_count = split_prose(lines)
+    prose_raw = "\n".join(prose_lines)
+    prose = re.sub(r"`[^`]*`", " ", prose_raw).replace("**", "").replace("*", "")
+
+    # ---- universal: ASCII + dashes (independent re-check) ----
+    check("manuscript is ASCII-only", all(ord(c) < 128 for c in raw),
+          "non-ASCII: " + " ".join(sorted({c for c in raw if ord(c) >= 128})))
+    check("no em-dash or en-dash", "\u2014" not in raw and "\u2013" not in raw)
+
+    # ---- universal: no placeholder text ----
+    # Placeholder markers are matched the way they are actually written, not as
+    # loose substrings, so a book may legitimately contain them as content. The
+    # SHOUTED markers (TODO, FIXME, ...) are matched case-sensitively as whole
+    # words: a lowercase filename like `todo.txt`, or a sentence about a to-do
+    # list, is not a left-behind marker, but "TODO" in caps is. "lorem ipsum" is
+    # distinctive enough to match case-insensitively. Angle-bracket placeholders
+    # are matched only as <<UPPERCASE>> tokens, so a shell append operator (>>),
+    # a heredoc (<<), or a redirect taught in the text never trips this. (This is
+    # why the original bare "<<" / ">>" / "[ ]" markers were dropped: a workbook
+    # that teaches the shell uses them as real content.)
+    shouted = ["TODO", "FIXME", "XXX", "TKTK", "TK TK", "INSERT HERE", "WRITEME"]
+    found_ph = [ph for ph in shouted if re.search(r"\b" + re.escape(ph) + r"\b", raw)]
+    if re.search(r"lorem ipsum", raw, re.IGNORECASE):
+        found_ph.append("lorem ipsum")
+    if re.search(r"<<[A-Z_][A-Z0-9_ ]*>>", raw):
+        found_ph.append("<<PLACEHOLDER>>")
+    check("no placeholder markers in manuscript", not found_ph,
+          "found: " + ", ".join(found_ph) if found_ph else "")
+
+    # ---- universal: no tabs / trailing whitespace in prose ----
+    ws_bad = []
+    for n, l in zip(prose_nums, prose_lines):
+        if "\t" in l:
+            ws_bad.append(f"tab on line {n}")
+        if l != l.rstrip():
+            ws_bad.append(f"trailing space on line {n}")
+    check("no tabs or trailing whitespace in prose", not ws_bad,
+          "; ".join(ws_bad[:6]) + (" ..." if len(ws_bad) > 6 else ""))
+
+    # ---- universal: balanced code fences ----
+    check("code fences are balanced", fence_count % 2 == 0,
+          f"{fence_count} fence markers")
+
+    # ---- universal: no doubled words (advisory) ----
+    doubles = []
+    for m in re.finditer(r"\b([A-Za-z]{2,})\s+\1\b", prose):
+        if m.group(1).lower() in {"that", "had", "very"}:
+            continue
+        ctx = re.sub(r"\s+", " ", prose[max(0, m.start() - 25): m.end() + 25]).strip()
+        doubles.append(f"'{m.group(1)} {m.group(1)}' ...{ctx}...")
+    warn("no accidental doubled words", not doubles,
+         "; ".join(doubles) if doubles else "")
+
+    # ---- universal: referenced images exist; assets/ has no dead weight ----
+    refs = set(re.findall(r"!\[[^\]]*\]\(([^)]+)\)", raw))
+    refs |= set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", raw))
+    fm_text = ""
+    if os.path.exists(p["frontmatter"]):
+        fm_text = open(p["frontmatter"], encoding="utf-8").read()
+        refs |= set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", fm_text))
+    have = set(C.list_assets(slug))
+    shared_assets = set(os.listdir(os.path.join(C.SHARED, "assets"))) \
+        if os.path.isdir(os.path.join(C.SHARED, "assets")) else set()
+    asset_missing = []
+    for r in sorted(refs):
+        name = os.path.basename(r.strip())
+        cands = [name] + [name + ext for ext in (".png", ".pdf", ".jpg", ".jpeg")]
+        # an image is satisfied by this book's assets/ or the shared assets/;
+        # a .pdf reference is also satisfied by its .svg source, because the
+        # build's figures step renders assets/x.svg to temp/<slug>/figures/x.pdf
+        stem = name[:-4] if name.lower().endswith(".pdf") else name
+        cands.append(stem + ".svg")
+        if not any(c in have or c in shared_assets for c in cands):
+            asset_missing.append(r)
+    check(f"referenced images exist ({len(refs)} refs)", not asset_missing,
+          "missing: " + ", ".join(asset_missing) if asset_missing else "")
+
+    # every file in this book's assets/ is referenced by its manuscript or
+    # frontmatter (a file nothing uses is dead weight)
+    ref_text = raw + "\n" + fm_text
+    unreferenced = [f for f in have if f not in ref_text]
+    check("every file in this book's assets/ is referenced", not unreferenced,
+          "dead weight: " + ", ".join(unreferenced) if unreferenced else
+          f"{len(have)} asset(s), all referenced")
+
+    # ---- universal: build produced a PDF ----
+    if os.path.exists(p["pdf"]):
+        size = os.path.getsize(p["pdf"])
+        check("build produced a non-trivial PDF", size > 50_000, f"{size:,} bytes")
     else:
-        ok = collapse(exp) in collapse(prose[max(0, i - WINDOW): i + len(ac) + WINDOW])
-    if not ok:
-        ctx = re.sub(r"\s+", " ", prose[max(0, i - 35): i + 35]).strip()
-        acro_missing.append(f"{ac} -> {exp} | ...{ctx}...")
-check(f"acronyms expanded in full ({acro_used} used, "
-      f"{len(PREVIEW_INTRODUCED & set(ACRONYMS))} preview-introduced)",
-      not acro_missing,
-      ("missing: " + " ;; ".join(acro_missing)) if acro_missing else "")
+        skip("build produced a PDF", "PDF not found; run build.py first")
 
-# ============================================================================
-# 2. VERSION TAG self-derives from the folder name and matches it.
-# ============================================================================
-# The preamble must reference \ssversion and \input the generated version file,
-# so the tag is computed rather than hard-typed.
-pre = open(PREAMBLE, encoding="utf-8").read()
-wired = ("\\ssversion" in pre) and ("version.tex" in pre)
-check("preamble uses the auto-derived \\ssversion tag", wired)
+    # ---- opt-in: chapter tails fill their final page ----
+    # A chapter that spills a line or two onto an otherwise empty page (the
+    # next chapter opens fresh overleaf) reads as a mistake in print. This
+    # measures every page's body text, with the running header, footer, and
+    # version tag stripped, and fails on near-empty pages, so a spill is
+    # caught the moment an edit creates one and cured by trimming that
+    # chapter a little. Opt in with check_page_fill = true (threshold 500
+    # body characters) or set an integer to choose the threshold. The title
+    # page is exempt by design.
+    if rev.get("check_page_fill"):
+        threshold = rev["check_page_fill"]
+        if threshold is True:
+            threshold = 500
+        if not os.path.exists(p["pdf"]):
+            skip("no near-empty pages", "PDF not found; run build.py first")
+        elif not shutil.which("pdftotext"):
+            skip("no near-empty pages", "pdftotext not available")
+        else:
+            txt = subprocess.run(["pdftotext", p["pdf"], "-"],
+                                 capture_output=True, text=True).stdout
+            thin, emptiest = [], None
+            for num, page in enumerate(txt.split("\f"), start=1):
+                if num == 1 or not page.strip():
+                    continue
+                kept = []
+                for ln in page.splitlines():
+                    t = ln.strip()
+                    if not t or "SOVEREIGN STACK" in t:
+                        continue
+                    if re.fullmatch(r"v\d+v\d+i\d+", t):
+                        continue
+                    if re.fullmatch(r"\d+\s*/\s*\d+", t):
+                        continue
+                    kept.append(t)
+                body = " ".join(kept)
+                if emptiest is None or len(body) < emptiest[1]:
+                    emptiest = (num, len(body))
+                if len(body) < threshold:
+                    thin.append(f'p{num} ({len(body)} chars: "{body[:60]}...")')
+            check("no near-empty pages (chapter tails fill their final page)",
+                  not thin,
+                  "; ".join(thin) if thin else
+                  f"emptiest content page is p{emptiest[0]} at {emptiest[1]} chars"
+                  f" (threshold {threshold})")
 
-# After a build, the generated tag must match the folder name's number.
-folder = os.path.basename(ROOT)
-folder_num = (re.findall(r"\d+", folder) or [None])[-1]
-if os.path.exists(VERSION_TEX):
-    vt = open(VERSION_TEX, encoding="utf-8").read()
-    m = re.search(r"v\d+v\d+i(\d+)", vt)
-    tag_iter = m.group(1) if m else None
-    check("version tag matches folder name",
-          tag_iter is not None and folder_num is not None and tag_iter == folder_num,
-          f"folder='{folder}' (n={folder_num}), tag i{tag_iter}")
-else:
-    skip("version tag matches folder name", "src/version.tex not built yet; run build.sh")
+    # ---- opt-in: Part numbering contiguous from 0 ----
+    parts = [int(x) for x in re.findall(r"(?m)^#\s+PART\s+(\d+):", raw)]
+    if rev.get("expect_part_headings"):
+        expected = list(range(0, len(parts)))
+        check("Part numbering is contiguous from 0", parts == expected,
+              f"found PART {parts}" if parts != expected
+              else f"PART 0..{parts[-1] if parts else '?'}")
+        # cross-references "Part N" must point at a Part that exists
+        maxpart = max(parts) if parts else 0
+        bad_refs = sorted({int(x) for x in re.findall(r"\bPart\s+(\d+)\b", prose)
+                           if int(x) > maxpart})
+        check("every 'Part N' reference points at an existing Part", not bad_refs,
+              f"dangling: Part {bad_refs}" if bad_refs else f"all within 0..{maxpart}")
 
-# ============================================================================
-# 2b. CONFIG (config.toml) + TRACKER (tracker.json) + footer mechanism.
-# ============================================================================
-import json
-folder = os.path.basename(ROOT)
-folder_num = (re.findall(r"\d+", folder) or [None])[-1]
+    # ---- opt-in: section numbers run 1..M within each Part ----
+    if rev.get("expect_section_numbers"):
+        sections = re.findall(r"(?m)^##\s+(\d+)\.(\d+)\b", raw)
+        by_part = defaultdict(list)
+        for pt, s in sections:
+            by_part[int(pt)].append(int(s))
+        sec_problems = []
+        for pt in sorted(by_part):
+            seq = by_part[pt]
+            if seq != list(range(1, len(seq) + 1)):
+                sec_problems.append(f"Part {pt}: {seq}")
+        check("section numbers within each Part are sequential", not sec_problems,
+              "; ".join(sec_problems) if sec_problems else f"{len(sections)} sections OK")
 
-# config.toml parses and supplies an integer volume + version.
-cfg_ok, cfg_detail = False, "config.toml missing"
-if os.path.exists(CONFIG):
-    try:
-        import tomllib
-        with open(CONFIG, "rb") as fh:
-            cfg = tomllib.load(fh)
-        v = cfg.get("version", {})
-        cfg_ok = isinstance(v.get("volume"), int) and isinstance(v.get("version"), int)
-        cfg_detail = f"volume={v.get('volume')}, version={v.get('version')}"
-    except Exception as e:
-        cfg_detail = f"parse error: {e}"
-check("config.toml parses with integer volume and version", cfg_ok, cfg_detail)
+    # ---- opt-in: Pointer boxes present and well-formed ----
+    pointer_lines = [l for l in lines if l.lstrip().startswith(">") and "Pointer" in l]
+    if rev.get("require_pointers") or pointer_lines:
+        ptr_bad = []
+        for l in pointer_lines:
+            body = l.lstrip("> ").strip()
+            if not body.startswith("**Pointer.**"):
+                ptr_bad.append("not led by **Pointer.**: " + body[:50])
+            elif body.count('"') < 2:
+                ptr_bad.append("no quoted prompt: " + body[:50])
+        need_present = bool(rev.get("require_pointers"))
+        ok = not ptr_bad and (len(pointer_lines) > 0 or not need_present)
+        check(f"Pointer boxes well-formed ({len(pointer_lines)} found)", ok,
+              "; ".join(ptr_bad) if ptr_bad else
+              ("none found but required" if need_present and not pointer_lines else ""))
 
-# tracker.json is valid JSON, has a non-empty history, and its current
-# iteration matches the folder name (build.sh keeps "current" in sync).
-trk_ok, trk_detail = False, "tracker.json missing"
-if os.path.exists(TRACKER):
-    try:
-        trk = json.load(open(TRACKER, encoding="utf-8"))
-        hist = trk.get("history", [])
-        cur_iter = str(trk.get("current", {}).get("iteration"))
-        good_hist = isinstance(hist, list) and len(hist) > 0 and all(
-            ("iteration" in h and "summary" in h) for h in hist)
-        trk_ok = good_hist and (folder_num is None or cur_iter == folder_num)
-        trk_detail = f"{len(hist)} entries, current i{cur_iter}, folder n={folder_num}"
-    except Exception as e:
-        trk_detail = f"parse error: {e}"
-check("tracker.json valid, has history, current matches folder", trk_ok, trk_detail)
+    # ---- opt-in: acronyms expanded in full near first use ----
+    if rev.get("expand_acronyms"):
+        WINDOW = 80
+        preview_ok = set(rev.get("acronyms_preview_ok", []))
+        described_ok = set(rev.get("acronyms_described_ok", []))
+        # Acronyms so common (or self-evident in context) that the book
+        # intentionally never spells them out, e.g. IT, PDF, URL. A documented
+        # editorial choice, listed in the book's own [review], not a gap. The
+        # check still enforces expansion on every other acronym.
+        common_ok = set(rev.get("acronyms_common_ok", []))
+        exempt = described_ok | common_ok
+        acro_missing, acro_used = [], 0
+        for ac, exp in sorted(ACRONYMS.items()):
+            m = re.search(r"\b" + re.escape(ac) + r"\b", prose)
+            if not m:
+                continue
+            acro_used += 1
+            if ac in exempt:
+                continue
+            i = m.start()
+            if ac in preview_ok:
+                ok = collapse(exp) in collapse(prose)
+            else:
+                ok = collapse(exp) in collapse(prose[max(0, i - WINDOW): i + len(ac) + WINDOW])
+            if not ok:
+                ctx = re.sub(r"\s+", " ", prose[max(0, i - 35): i + 35]).strip()
+                acro_missing.append(f"{ac} -> {exp} | ...{ctx}...")
+        check(f"acronyms expanded in full ({acro_used} used, "
+              f"{len(preview_ok)} preview-ok, {len(described_ok)} described-ok, "
+              f"{len(common_ok)} common-ok)",
+              not acro_missing,
+              ("missing: " + " ;; ".join(acro_missing)) if acro_missing else "")
 
-# the footer carries the total page count (page X / Y) via lastpage.
-foot_ok = ("lastpage" in pre) and ("LastPage" in pre)
-check("footer shows total page count (lastpage / \\pageref{LastPage})", foot_ok)
+    # ---- each declared language edition, reviewed in its own language ----
+    for lang in C.book_languages(slug):
+        review_language_variant(slug, lang)
 
-# ============================================================================
-# 3. BASELINE: the build produced a PDF.
-# ============================================================================
-if os.path.exists(PDF):
-    size = os.path.getsize(PDF)
-    check("build produced a non-trivial PDF", size > 50_000, f"{size} bytes")
-else:
-    skip("build produced a PDF", "PDF not found; run build.sh first")
 
-# ============================================================================
-# 4. PART NUMBERING is contiguous 0..N with no gaps or duplicates.
-# ============================================================================
-parts = [int(x) for x in re.findall(r"(?m)^#\s+PART\s+(\d+):", raw)]
-expected = list(range(0, len(parts)))
-check("Part numbering is contiguous from 0",
-      parts == expected,
-      f"found PART {parts}" if parts != expected else f"PART 0..{parts[-1] if parts else '?'}")
+def review_language_variant(slug, lang):
+    """Content review for one translated edition, run alongside the default one.
 
-# ============================================================================
-# 5. SECTION NUMBERS within each Part run 1..M with no gaps or duplicates.
-# ============================================================================
-sec_problems = []
-sections = re.findall(r"(?m)^##\s+(\d+)\.(\d+)\b", raw)
-from collections import defaultdict
-by_part = defaultdict(list)
-for p, s in sections:
-    by_part[int(p)].append(int(s))
-for p in sorted(by_part):
-    seq = by_part[p]
-    if seq != list(range(1, len(seq) + 1)):
-        sec_problems.append(f"Part {p}: {seq}")
-check("section numbers within each Part are sequential",
-      not sec_problems,
-      "; ".join(sec_problems) if sec_problems else f"{len(sections)} sections OK")
+    The universal checks are re-run in the variant's own charset (ASCII plus the
+    Latin diacritics, no dashes, no smart quotes), together with the placeholder,
+    whitespace, fence, and image-reference checks. The structural checks are the
+    same shape as the default's but expressed in the edition's language, read from
+    its [[language]] entry: Part numbering uses its part_word ("DEEL"), Pointer
+    boxes its pointer_lead ("**Aanwijzing.**"); section numbers are language-
+    agnostic. Acronym expansion is deliberately NOT run on a variant: the acronyms
+    are universal, but rendering their expansions is the translator's job, and a
+    second-language glossary is a later pass, not a build gate.
+    """
+    lp = C.language_paths(slug, lang)
+    code = lp["code"]
+    t = f"[{code}] "
+    if not os.path.exists(lp["manuscript"]):
+        check(t + "manuscript present", False,
+              f"missing: {os.path.basename(lp['manuscript'])}")
+        return
+    raw = open(lp["manuscript"], encoding="utf-8").read()
+    lines = raw.split("\n")
+    prose_lines, prose_nums, fence_count = split_prose(lines)
 
-# ============================================================================
-# 6. POINTER boxes are well-formed: start with **Pointer.** and quote a prompt.
-# ============================================================================
-pointer_lines = [l for l in lines if l.lstrip().startswith(">") and "Pointer" in l]
-ptr_bad = []
-for l in pointer_lines:
-    body = l.lstrip("> ").strip()
-    if not body.startswith("**Pointer.**"):
-        ptr_bad.append("not led by **Pointer.**: " + body[:50])
-    elif body.count('"') < 2:
-        ptr_bad.append("no quoted prompt: " + body[:50])
-check(f"Pointer boxes well-formed ({len(pointer_lines)} found)",
-      not ptr_bad and len(pointer_lines) > 0,
-      "; ".join(ptr_bad) if ptr_bad else "")
+    # charset: ASCII + known Latin diacritics, no dashes, no smart quotes
+    exotic = sorted({c for c in raw if ord(c) > 127 and c not in C.LATIN_DIACRITICS})
+    check(t + "charset is ASCII + known diacritics", not exotic,
+          "unexpected: " + " ".join(exotic) if exotic else "")
+    check(t + "no em-dash or en-dash", "\u2014" not in raw and "\u2013" not in raw)
+    smart = sorted({c for c in raw if c in "\u2018\u2019\u201c\u201d"})
+    check(t + "no curly/smart quotes", not smart,
+          "found: " + " ".join(smart) if smart else "")
 
-# ============================================================================
-# 7. ASSET references all exist on disk.
-# ============================================================================
-refs = set(re.findall(r"!\[[^\]]*\]\(([^)]+)\)", raw))           # markdown images
-refs |= set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", raw))  # latex
-asset_missing = []
-have = set(os.listdir(ASSETS)) if os.path.isdir(ASSETS) else set()
-for r in sorted(refs):
-    name = os.path.basename(r.strip())
-    # try as given, and with common image extensions (graphicspath resolves these)
-    cands = [name] + [name + ext for ext in (".png", ".pdf", ".jpg", ".jpeg")]
-    if not any(c in have for c in cands):
-        asset_missing.append(r)
-check(f"referenced images exist in assets/ ({len(refs)} refs)",
-      not asset_missing,
-      "missing: " + ", ".join(asset_missing) if asset_missing else "")
+    # placeholder markers (same rules as the default edition)
+    shouted = ["TODO", "FIXME", "XXX", "TKTK", "TK TK", "INSERT HERE", "WRITEME"]
+    found_ph = [ph for ph in shouted if re.search(r"\b" + re.escape(ph) + r"\b", raw)]
+    if re.search(r"lorem ipsum", raw, re.IGNORECASE):
+        found_ph.append("lorem ipsum")
+    if re.search(r"<<[A-Z_][A-Z0-9_ ]*>>", raw):
+        found_ph.append("<<PLACEHOLDER>>")
+    check(t + "no placeholder markers", not found_ph,
+          "found: " + ", ".join(found_ph) if found_ph else "")
 
-# ============================================================================
-# 8. NO PLACEHOLDER text left in the manuscript.
-# ============================================================================
-placeholders = ["TODO", "FIXME", "XXX", "TKTK", "TK TK", "lorem ipsum",
-                "INSERT HERE", "WRITEME", "<<", ">>", "[ ]"]
-found_ph = [p for p in placeholders if p.lower() in raw.lower()]
-check("no placeholder markers in manuscript",
-      not found_ph,
-      "found: " + ", ".join(found_ph) if found_ph else "")
+    # tabs / trailing whitespace in prose
+    ws_bad = []
+    for n, l in zip(prose_nums, prose_lines):
+        if "\t" in l:
+            ws_bad.append(f"tab on line {n}")
+        if l != l.rstrip():
+            ws_bad.append(f"trailing space on line {n}")
+    check(t + "no tabs or trailing whitespace", not ws_bad,
+          "; ".join(ws_bad[:6]) + (" ..." if len(ws_bad) > 6 else ""))
 
-# ============================================================================
-# 9. NO doubled words in prose (advisory: a few are legitimate English).
-# ============================================================================
-doubles = []
-for m in re.finditer(r"\b([A-Za-z]{2,})\s+\1\b", prose):
-    w = m.group(1).lower()
-    if w in {"that", "had", "very"}:       # legitimately doublable
-        continue
-    ctx = re.sub(r"\s+", " ", prose[max(0, m.start() - 25): m.end() + 25]).strip()
-    doubles.append(f"'{m.group(1)} {m.group(1)}' ...{ctx}...")
-warn("no accidental doubled words", not doubles,
-     "; ".join(doubles) if doubles else "")
+    # balanced code fences
+    check(t + "code fences are balanced", fence_count % 2 == 0,
+          f"{fence_count} fence markers")
 
-# ============================================================================
-# 10. NO tabs and no trailing whitespace in prose lines.
-# ============================================================================
-ws_bad = []
-for n, l in zip(prose_line_numbers, prose_lines):
-    if "\t" in l:
-        ws_bad.append(f"tab on line {n}")
-    if l != l.rstrip():
-        ws_bad.append(f"trailing space on line {n}")
-check("no tabs or trailing whitespace in prose",
-      not ws_bad, "; ".join(ws_bad[:6]) + (" ..." if len(ws_bad) > 6 else ""))
+    # referenced images exist (shared assets + this book's assets; .pdf <- .svg)
+    refs = set(re.findall(r"!\[[^\]]*\]\(([^)]+)\)", raw))
+    refs |= set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", raw))
+    if os.path.exists(lp["frontmatter"]):
+        fm_text = open(lp["frontmatter"], encoding="utf-8").read()
+        refs |= set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", fm_text))
+    have = set(C.list_assets(slug))
+    shared_assets = set(os.listdir(os.path.join(C.SHARED, "assets"))) \
+        if os.path.isdir(os.path.join(C.SHARED, "assets")) else set()
+    asset_missing = []
+    for r in sorted(refs):
+        name = os.path.basename(r.strip())
+        cands = [name] + [name + ext for ext in (".png", ".pdf", ".jpg", ".jpeg")]
+        stem = name[:-4] if name.lower().endswith(".pdf") else name
+        cands.append(stem + ".svg")
+        if not any(c in have or c in shared_assets for c in cands):
+            asset_missing.append(r)
+    check(t + f"referenced images exist ({len(refs)} refs)", not asset_missing,
+          "missing: " + ", ".join(asset_missing) if asset_missing else "")
 
-# ============================================================================
-# 11. CODE fences are balanced (every ``` opened is closed).
-# ============================================================================
-check("code fences are balanced", fence_count % 2 == 0,
-      f"{fence_count} fence markers")
+    # structural: Part numbering in this language ("# DEEL N:")
+    part_word = lang.get("part_word", "PART")
+    parts = [int(x) for x in
+             re.findall(r"(?m)^#\s+" + re.escape(part_word) + r"\s+(\d+):", raw)]
+    expected = list(range(0, len(parts)))
+    check(t + f"{part_word} numbering is contiguous from 0", parts == expected,
+          f"found {part_word} {parts}" if parts != expected
+          else f"{part_word} 0..{parts[-1] if parts else '?'}")
 
-# ============================================================================
-# 12. "Part N" cross-references point at a Part that exists.
-# ============================================================================
-maxpart = max(parts) if parts else 0
-bad_refs = sorted({int(x) for x in re.findall(r"\bPart\s+(\d+)\b", prose)
-                   if int(x) > maxpart})
-check("every 'Part N' reference points at an existing Part",
-      not bad_refs,
-      f"dangling: Part {bad_refs}" if bad_refs else f"all within 0..{maxpart}")
+    # structural: section numbers 1..M within each Part (language-agnostic "## N.M")
+    sections = re.findall(r"(?m)^##\s+(\d+)\.(\d+)\b", raw)
+    by_part = defaultdict(list)
+    for pt, s in sections:
+        by_part[int(pt)].append(int(s))
+    sec_problems = []
+    for pt in sorted(by_part):
+        seq = by_part[pt]
+        if seq != list(range(1, len(seq) + 1)):
+            sec_problems.append(f"Part {pt}: {seq}")
+    check(t + "section numbers within each Part are sequential", not sec_problems,
+          "; ".join(sec_problems) if sec_problems else f"{len(sections)} sections OK")
 
-# ============================================================================
-# 13. ASCII-only and no em/en dashes (independent re-check of the build rule).
-# ============================================================================
-check("manuscript is ASCII-only", all(ord(c) < 128 for c in raw),
-      "non-ASCII: " + " ".join(sorted({c for c in raw if ord(c) >= 128})))
-check("no em-dash or en-dash", "\u2014" not in raw and "\u2013" not in raw)
+    # structural: Pointer boxes in this language ("**Aanwijzing.**")
+    pointer_lead = lang.get("pointer_lead", "**Pointer.**")
+    key = pointer_lead.replace("*", "").rstrip(".")   # e.g. "Aanwijzing"
+    pointer_lines = [l for l in lines if l.lstrip().startswith(">") and key in l]
+    ptr_bad = []
+    for l in pointer_lines:
+        body = l.lstrip("> ").strip()
+        if not body.startswith(pointer_lead):
+            ptr_bad.append(f"not led by {pointer_lead}: " + body[:50])
+        elif body.count('"') < 2:
+            ptr_bad.append("no quoted prompt: " + body[:50])
+    check(t + f"Pointer boxes well-formed ({len(pointer_lines)} found)", not ptr_bad,
+          "; ".join(ptr_bad) if ptr_bad else "")
 
-# ============================================================================
-# 14/15. POST-BUILD: overfull boxes and page ceiling.
-# ============================================================================
-if os.path.exists(LOG):
-    log = open(LOG, encoding="utf-8", errors="ignore").read()
-    n_over = log.count("Overfull \\hbox")
-    check("no overfull hboxes in build log", n_over == 0, f"{n_over} found")
-else:
-    skip("overfull-hbox check", "build log not found; run build.sh first")
 
-if os.path.exists(PDF):
-    try:
-        info = subprocess.run(["pdfinfo", PDF], capture_output=True, text=True).stdout
-        pages = int(next(l.split()[1] for l in info.splitlines() if l.startswith("Pages")))
-        check("page count within the 100-page ceiling", 1 <= pages <= 100, f"{pages} pages")
-    except Exception as e:
-        skip("page-count check", f"could not read PDF ({e})")
-else:
-    skip("page-count check", "PDF not found; run build.sh first")
+def review_press():
+    print("\n[press]")
+    # MANIFEST.md names every source file and folder, so it cannot silently drift.
+    manifest = os.path.join(C.ROOT, "MANIFEST.md")
+    if os.path.exists(manifest):
+        man = open(manifest, encoding="utf-8").read()
+        expected = set()
+        # top level (skip generated/transient folders and the snapshot archive)
+        for e in os.listdir(C.ROOT):
+            if e in {"__pycache__", "temp", "output", ".git"} or e.endswith(".zip"):
+                continue
+            expected.add(e)
+        # src/shared, src/tests, and every book folder's files
+        for sub in (os.path.join("src", "shared"), os.path.join("src", "tests")):
+            d = os.path.join(C.ROOT, sub)
+            if os.path.isdir(d):
+                expected |= {e for e in os.listdir(d) if e != "__pycache__"}
+        for slug in C.discover_books():
+            expected.add(slug)
+            bdir = os.path.join(C.BOOKS_DIR, slug)
+            expected |= {e for e in os.listdir(bdir) if e != "__pycache__"}
+        missing = sorted({e for e in expected if e not in man})
+        check("MANIFEST.md names every source file and folder", not missing,
+              "missing: " + ", ".join(missing) if missing
+              else f"{len(expected)} entries covered")
+    else:
+        check("MANIFEST.md present", False, "MANIFEST.md not found")
 
-# ============================================================================
-# 16. MANIFEST.md must name every source file and folder (kept honest here, so
-#     the manifest cannot silently drift out of date as files come and go).
-# ============================================================================
-MANIFEST = os.path.join(ROOT, "MANIFEST.md")
-if os.path.exists(MANIFEST):
-    man = open(MANIFEST, encoding="utf-8").read()
-    expected = [e for e in os.listdir(ROOT)
-                if e != "__pycache__" and not e.endswith(".zip")]
-    for sub in ("src", os.path.join("src", "tests")):
-        d = os.path.join(ROOT, sub)
-        if os.path.isdir(d):
-            expected += [e for e in os.listdir(d) if e != "__pycache__"]
-    missing = sorted({e for e in expected if e not in man})
-    check("MANIFEST.md names every source file and folder", not missing,
-          "missing: " + ", ".join(missing) if missing
-          else f"{len(set(expected))} entries covered")
-else:
-    check("MANIFEST.md present", False, "MANIFEST.md not found")
-
-# ============================================================================
-# 17. RECOVERY ARCHIVE present: the bundle must always carry a snapshot of
-#     itself (the <folder>.zip that build.sh step 4 maintains), so the base
-#     files are always recoverable from inside the tree. This encodes the
-#     "always have an archive" rule as a test the project owns, rather than a
-#     thing someone has to remember. Gated on a prior build, like the other
-#     post-build checks (the archive is written at the end of build.sh).
-# ============================================================================
-ARCHIVE = os.path.join(ROOT, os.path.basename(ROOT) + ".zip")
-if os.path.exists(PDF):
-    if os.path.exists(ARCHIVE):
-        asize = os.path.getsize(ARCHIVE)
+    # recovery archive present and non-trivial (gated on a build having run)
+    archive = os.path.join(C.ROOT, "recovery.zip")
+    any_pdf = any(os.path.exists(C.book_paths(s)["pdf"]) for s in C.discover_books())
+    if not any_pdf:
+        skip("recovery archive present", "no PDFs yet; run build.py first")
+    elif os.path.exists(archive):
         check("recovery archive present and non-trivial",
-              asize > 50_000, f"{os.path.basename(ARCHIVE)}, {asize} bytes")
+              os.path.getsize(archive) > 50_000, f"{os.path.getsize(archive):,} bytes")
     else:
-        check("recovery archive present and non-trivial", False,
-              f"{os.path.basename(ARCHIVE)} not found; build.sh step 4 should create it")
-else:
-    skip("recovery archive present", "PDF not found; run build.sh first")
+        check("recovery archive present and non-trivial", False, "recovery.zip not found")
 
-# ----------------------------------------------------------------------------
-print()
-if warns:
-    print(f"{len(warns)} advisory warning(s): {', '.join(warns)}")
-if fails:
-    print(f"{len(fails)} check(s) FAILED: {', '.join(fails)}")
-    sys.exit(1)
-print("all review checks passed")
+
+def main():
+    wanted = sys.argv[1:]
+    books = C.discover_books()
+    if wanted:
+        unknown = [s for s in wanted if s not in books]
+        if unknown:
+            print("unknown book(s): " + ", ".join(unknown))
+            print("available: " + ", ".join(books))
+            sys.exit(2)
+        books = wanted
+    if not books:
+        print("no books found under books/*/book.toml")
+        sys.exit(2)
+
+    print("=" * 70)
+    print("CONTENT REVIEW  ::  " + ", ".join(books))
+    print("=" * 70)
+
+    for slug in books:
+        review_book(slug)
+    if not wanted:
+        review_press()
+
+    print()
+    if warns:
+        print(f"{len(warns)} advisory warning(s): {', '.join(warns)}")
+    if fails:
+        print(f"{len(fails)} check(s) FAILED: {', '.join(fails)}")
+        sys.exit(1)
+    print("all review checks passed")
+
+
+if __name__ == "__main__":
+    main()

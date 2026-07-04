@@ -1,0 +1,92 @@
+# ============================ THE ATLAS - book configuration ============================
+# "Sovereign Stack - The Atlas, Volume 1: Home Node." The Atlas is the series name
+# for the main volumes; this is its Volume 1, the dense, complete map from bare
+# hardware to a private AI, at speed, for a reader who can already walk a map alone.
+# This is the source of truth that the Primer (Volume 0) slows down, one Part at a time.
+
+[project]
+title        = "Sovereign Stack - The Atlas, Volume 1: Home Node"
+slug         = "atlas-home-node"
+series_short = "SOVEREIGN STACK"   # left side of the running header
+book_short   = "ATLAS / VOL 1"     # right side of the running header (ASCII only)
+enabled      = true                # set false to skip in a bare `build.py` run
+
+[version]
+# The tag is v{volume}v{version}i{iteration}.
+volume    = 1    # Volume 1 of the Atlas (the Atlas proper begins here; the Primer is Volume 0)
+version   = 1    # 1 = "not yet shared"; bump only on an external share
+iteration = 70   # working iteration of Home Node; bump on a real edit (or: build.py bump)
+
+[preprocess]
+# These reproduce exactly what the old vol1-specific preprocess.py did, now as
+# data instead of code. The body begins at the first front-matter section; the
+# title block above it is the frontmatter's job. The two front-matter headings
+# that should read as chapters are promoted from ## to #.
+start_marker         = "## Why this book exists"
+promote_to_chapter   = ["## Why this book exists", "## How to use this book"]
+drop_thematic_breaks = true
+
+[build]
+# Inherits the workshop [defaults]; nothing to override. (A book could set e.g.
+# page_ceiling here to widen its own limit without touching the others.)
+
+[review]
+# Settings for tests/test_review.py. These let the generic review suite hold this
+# book to its own structural rules without hard-coding the book into the test.
+expect_part_headings = true   # body uses "# PART N:"; check 0..N contiguity
+expect_section_numbers = true # sections read "## N.M"; check 1..M per Part
+require_pointers = true       # the Atlas must carry Pointer boxes; check > 0
+check_page_fill = true        # no chapter tail may spill a near-empty page; threshold 500 chars
+expand_acronyms = true        # every acronym spelled out in full near first use
+
+# A few acronyms are signposted in the chapter-preview bullets of "How to read
+# this book", and two more (LLM, UPS) are expanded later in their home section,
+# all before or apart from their first prose mention. Expanding them at that
+# first mention would nest parentheses awkwardly, so for these the rule relaxes
+# to "defined somewhere in the book" rather than "at first use".
+acronyms_preview_ok = ["LAN", "WAN", "NAT", "DNS", "SSH", "LLM", "UPS"]
+
+# Three memory-type acronyms are introduced by plain-language description, not by
+# their formal expansion, on purpose (the reader is told the names do not matter,
+# only the bandwidth does). These are checked for a gloss near first use instead.
+acronyms_described_ok = ["HBM", "GDDR", "DDR"]
+
+# Acronyms left unexpanded on purpose because they are either universally known
+# or self-evident in context, where spelling them out would read as padding to
+# the intended reader. This is an editorial choice, recorded here in the open;
+# move any of these out of this list to have the review insist it be expanded at
+# first use. Two grounds are in play: universally known to this book's audience
+# (CPU, GPU, API, JSON, VPN, TLS, alongside SSD / HTTP / HTTPS / HTML), and
+# defined by what they *do* at first mention rather than by their letters, which
+# serves the reader better than the words behind them (BIOS / UEFI; and DHCP,
+# introduced as the thing that "hands out private LAN addresses"). CSS / CSV /
+# TOML join on the first ground: baseline web tech and data formats named only in
+# passing, self-evident to a reader who has built anything with a face or a file.
+acronyms_common_ok = ["IT", "PDF", "URL", "HTTP", "HTTPS", "HTML", "SSD", "EM",
+                      "BIOS", "UEFI", "CPU", "GPU", "API", "JSON", "VPN", "TLS",
+                      "DHCP", "CSS", "CSV", "TOML"]
+
+# ---- Language editions -------------------------------------------------------
+# Each [[language]] adds one more PDF beside the default English edition, built
+# from a translated manuscript that lives next to manuscript.md in this folder
+# (build.py picks it up automatically). The default edition (manuscript.md ->
+# atlas-home-node.pdf) is untouched. A variant shares this book's version tag (a
+# translation is the same version in another language), so editing a translation
+# rebuilds only its own PDF and never bumps [version]. The [preprocess]-shaped
+# keys are this edition's own (its start marker, the headings it promotes); the
+# *_word / *_lead keys let the review suite check the translated structure in its
+# own language.
+
+[[language]]
+code               = "NL"                        # -> output/atlas-home-node-NL.pdf
+manuscript         = "manuscript-NL.md"          # translated source, beside manuscript.md
+frontmatter        = "frontmatter-NL.tex"        # Dutch title page (Omslag / Inhoud)
+lang               = "nl-NL"                      # pandoc: Dutch hyphenation via babel
+book_short         = "ATLAS / DEEL 1"            # right side of the running header
+start_marker       = "## Waarom dit boek bestaat"
+promote_to_chapter = ["## Waarom dit boek bestaat", "## Dit boek gebruiken"]
+# review-suite helpers (same structure, expressed in Dutch):
+part_word     = "DEEL"             # body uses "# DEEL N:"        (English "PART")
+pointer_lead  = "**Aanwijzing.**"  # Pointer boxes' lead phrase   (English "**Pointer.**")
+cover_word    = "Omslag"           # title-page Contents entry    (English "Cover")
+contents_word = "Inhoud"           # TOC heading word             (English "Contents")

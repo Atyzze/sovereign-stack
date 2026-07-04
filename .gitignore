@@ -1,5 +1,18 @@
-# Ignore the temp folder
+# Regenerable build artifacts and caches (see MANIFEST.md). Everything here is
+# reproduced by `python3 build.py`; only src/ and the top-level files you run or
+# read belong in version control.
+
+# Per-book working files: cleaned markdown, generated .tex, xelatex byproducts,
+# figure renders, build.log. Clear any time with `python3 build.py clean`.
 temp/
 
-# Ignore all .zip files
-*.zip
+# The self-healing snapshot build.py refreshes on every run.
+recovery.zip
+
+# The incremental-build hash cache (delete to force a full rebuild).
+output/.build-state.json
+
+# Python and OS caches.
+__pycache__/
+*.pyc
+.DS_Store

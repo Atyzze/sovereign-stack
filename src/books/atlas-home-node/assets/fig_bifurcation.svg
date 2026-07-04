@@ -1,0 +1,82 @@
+<svg viewBox="0 0 840 420" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_bifurcation: what-as-tests vs how-as-code (Atlas 9.1/9.2) -->
+  <defs>
+    <marker id="bf_ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#6A7A6A"/>
+    </marker>
+    <marker id="bf_ahr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8A5A1B"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="840" height="420" fill="#FFFFFF"/>
+
+  <!-- the cut -->
+  <line x1="420" y1="30" x2="420" y2="286" stroke="#1A1A1A" stroke-width="2.6"/>
+  <rect x="382" y="140" width="76" height="26" rx="13" fill="#1A1A1A"/>
+  <text x="420" y="158" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#FFFFFF">the cut</text>
+
+  <!-- ===== left: yours ===== -->
+  <text x="60" y="52" font-size="16" font-weight="bold" fill="#1B5E3A">YOURS: the what, as tests</text>
+  <rect x="60" y="70" width="310" height="180" rx="5" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.5"/>
+  <g font-size="12.5" fill="#1A1A1A">
+    <rect x="80" y="92" width="13" height="13" rx="2" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="103" y="103">refuses every port but the three allowed</text>
+    <rect x="80" y="122" width="13" height="13" rx="2" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="103" y="133">answers /api/health from the LAN</text>
+    <rect x="80" y="152" width="13" height="13" rx="2" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="103" y="163">survives a reboot with services up</text>
+    <rect x="80" y="182" width="13" height="13" rx="2" fill="#FFFFFF" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="103" y="193">rejects a wrong key three times, then bans</text>
+  </g>
+  <text x="80" y="230" font-size="11.5" fill="#6A7A6A" font-style="italic">plain language, machine-checkable</text>
+  <text x="60" y="274" font-size="12" fill="#1B5E3A" font-weight="bold">kept, versioned, owned: this is the contract</text>
+
+  <!-- ===== right: the model's ===== -->
+  <text x="470" y="52" font-size="16" font-weight="bold" fill="#6A7A6A">THE MODEL'S: the how, as code</text>
+  <rect x="470" y="70" width="310" height="180" rx="5" fill="#FFFFFF" stroke="#D7D7CE" stroke-width="1.4"/>
+  <g font-family="DejaVu Sans Mono, monospace" font-size="11.5" fill="#6A7A6A">
+    <text x="490" y="100">def guard(port, allowed):</text>
+    <text x="522" y="120">if port not in allowed:</text>
+    <text x="554" y="140">refuse(port)</text>
+    <text x="522" y="160">...</text>
+    <text x="490" y="186"># generated, regenerated,</text>
+    <text x="490" y="204"># thrown away without grief</text>
+  </g>
+  <text x="470" y="274" font-size="12" fill="#6A7A6A" font-weight="bold">disposable: judged only by the green suite</text>
+
+  <!-- ===== the cycle underneath ===== -->
+  <line x1="30" y1="300" x2="810" y2="300" stroke="#C2C2BA" stroke-width="1" stroke-dasharray="3 5"/>
+  <g font-size="12" text-anchor="middle">
+    <rect x="36" y="322" width="126" height="44" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="99" y="340" font-weight="bold" fill="#1B5E3A">describe</text>
+    <text x="99" y="356" font-size="10.5" fill="#6A7A6A">what you want</text>
+
+    <rect x="200" y="322" width="126" height="44" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.3"/>
+    <text x="263" y="340" font-weight="bold" fill="#1B5E3A">tests</text>
+    <text x="263" y="356" font-size="10.5" fill="#6A7A6A">the model drafts, you read</text>
+
+    <rect x="364" y="322" width="126" height="44" rx="4" fill="#FFFFFF" stroke="#D7D7CE" stroke-width="1.3"/>
+    <text x="427" y="340" font-weight="bold" fill="#6A7A6A">code</text>
+    <text x="427" y="356" font-size="10.5" fill="#6A7A6A">the model writes</text>
+
+    <rect x="528" y="322" width="126" height="44" rx="4" fill="#FFFFFF" stroke="#D7D7CE" stroke-width="1.3"/>
+    <text x="591" y="340" font-weight="bold" fill="#6A7A6A">run the suite</text>
+    <text x="591" y="356" font-size="10.5" fill="#6A7A6A">every test, every time</text>
+
+    <rect x="692" y="322" width="118" height="44" rx="4" fill="#1B5E3A"/>
+    <text x="751" y="340" font-weight="bold" fill="#FFFFFF">green: own it</text>
+    <text x="751" y="356" font-size="10.5" fill="#DDEAE2">verified, not trusted</text>
+  </g>
+  <g stroke="#6A7A6A" stroke-width="1.4" fill="none">
+    <line x1="162" y1="344" x2="196" y2="344" marker-end="url(#bf_ah)"/>
+    <line x1="326" y1="344" x2="360" y2="344" marker-end="url(#bf_ah)"/>
+    <line x1="490" y1="344" x2="524" y2="344" marker-end="url(#bf_ah)"/>
+    <line x1="654" y1="344" x2="688" y2="344" marker-end="url(#bf_ah)"/>
+  </g>
+  <!-- red loops back -->
+  <path d="M591 368 L591 394 L427 394 L427 370" fill="none" stroke="#8A5A1B" stroke-width="1.4" marker-end="url(#bf_ahr)"/>
+  <text x="509" y="410" text-anchor="middle" font-size="11" fill="#8A5A1B" font-style="italic">red: hand the failure back and iterate</text>
+</svg>

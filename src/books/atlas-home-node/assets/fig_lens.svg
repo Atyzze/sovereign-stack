@@ -1,0 +1,63 @@
+<svg viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_lens: the memory-speed lens (Atlas 1.2). One ruler: bandwidth. -->
+  <defs>
+    <marker id="lens_ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#1B5E3A"/>
+    </marker>
+    <marker id="lens_ahs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8A5A1B"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="860" height="430" fill="#FFFFFF"/>
+
+  <text x="30" y="40" font-size="17" font-weight="bold" fill="#1B5E3A">ONE RULER: MEMORY BANDWIDTH</text>
+  <text x="30" y="60" font-size="12.5" fill="#6A7A6A" font-style="italic">every generated token rereads the whole model, so the speed of memory is the speed of thought</text>
+
+  <!-- four tiers; arrow thickness tracks bandwidth -->
+  <g font-size="13.5" fill="#1A1A1A">
+    <!-- VRAM -->
+    <rect x="30" y="84" width="230" height="46" rx="3" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <text x="44" y="104" font-weight="bold" fill="#1B5E3A">GPU VRAM</text>
+    <text x="44" y="121" font-size="11.5" fill="#6A7A6A">a used 2020 card (3090)</text>
+    <line x1="272" y1="107" x2="668" y2="107" stroke="#1B5E3A" stroke-width="9" marker-end="url(#lens_ah)"/>
+    <text x="700" y="104" font-size="13.5" font-weight="bold" fill="#1B5E3A">~936 GB/s</text>
+    <text x="700" y="120" font-size="11.5" fill="#6A7A6A">tokens pour</text>
+
+    <!-- unified -->
+    <rect x="30" y="140" width="230" height="46" rx="3" fill="#F6F6F3" stroke="#2E7D4F" stroke-width="1.2"/>
+    <text x="44" y="160" font-weight="bold" fill="#2E7D4F">Unified memory</text>
+    <text x="44" y="177" font-size="11.5" fill="#6A7A6A">Apple silicon, Strix Halo</text>
+    <line x1="272" y1="163" x2="520" y2="163" stroke="#2E7D4F" stroke-width="6" marker-end="url(#lens_ah)"/>
+    <text x="544" y="160" font-size="13.5" font-weight="bold" fill="#2E7D4F">~120 to 800 GB/s</text>
+    <text x="544" y="176" font-size="11.5" fill="#6A7A6A">capacity meets speed</text>
+
+    <!-- system RAM -->
+    <rect x="30" y="196" width="230" height="46" rx="3" fill="#F6F6F3" stroke="#D7D7CE" stroke-width="1.2"/>
+    <text x="44" y="216" font-weight="bold" fill="#1A1A1A">System RAM</text>
+    <text x="44" y="233" font-size="11.5" fill="#6A7A6A">an ordinary desktop, CPU only</text>
+    <line x1="272" y1="219" x2="392" y2="219" stroke="#6A7A6A" stroke-width="3.5" marker-end="url(#lens_ah)"/>
+    <text x="416" y="216" font-size="13.5" font-weight="bold" fill="#1A1A1A">~90 GB/s</text>
+    <text x="416" y="232" font-size="11.5" fill="#6A7A6A">a reading pace</text>
+
+    <!-- disk spill -->
+    <rect x="30" y="252" width="230" height="46" rx="3" fill="#FFFFFF" stroke="#8A5A1B" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <text x="44" y="272" font-weight="bold" fill="#8A5A1B">Spill to disk</text>
+    <text x="44" y="289" font-size="11.5" fill="#6A7A6A">model larger than memory</text>
+    <line x1="272" y1="275" x2="308" y2="275" stroke="#8A5A1B" stroke-width="1.6" marker-end="url(#lens_ahs)"/>
+    <text x="330" y="272" font-size="13.5" font-weight="bold" fill="#8A5A1B">a crawl</text>
+    <text x="330" y="288" font-size="11.5" fill="#6A7A6A">the cliff 1.4 warns about</text>
+  </g>
+
+  <!-- the rule of thumb: a full-width band, nothing to collide with -->
+  <rect x="30" y="322" width="800" height="66" rx="4" fill="#FFFFFF" stroke="#C2C2BA" stroke-width="1.2"/>
+  <rect x="30" y="322" width="4" height="66" fill="#2E7D4F"/>
+  <text x="52" y="349" font-size="13.5" font-weight="bold" fill="#1B5E3A">The rule of thumb</text>
+  <text x="52" y="374" font-size="14" fill="#1A1A1A" font-family="DejaVu Sans Mono, monospace">tokens/s = bandwidth / model size</text>
+  <text x="470" y="349" font-size="12.5" fill="#6A7A6A">936 GB/s over a 4.8 GB model: a ceiling near 195,</text>
+  <text x="470" y="371" font-size="12.5" fill="#6A7A6A">roughly ~100 tokens/s in practice (1.2)</text>
+
+  <text x="30" y="416" font-size="13" fill="#1A1A1A">Same chip, same model: move the weights one tier down and the answer arrives an order of magnitude slower.</text>
+</svg>

@@ -1,135 +1,125 @@
-# MANIFEST: what every file is, and what deleting it costs
+# MANIFEST
 
-This is the full inventory of "Sovereign Stack, Volume 1." Three things make up
-the project: the **manuscript** (the single source of truth), the **machinery**
-that turns it into a PDF, and the **records** that track it. Everything else is
-either an input to those or a regenerable output of them. Rule of thumb: the
-manuscript and the contents of `src/` and `assets/` are precious; everything
-else can be rebuilt from them.
+Every file in the press, what it is, and what is lost if it goes missing. The
+review suite (`src/tests/test_review.py`) checks that this list names every
+source file and folder, so it cannot quietly fall out of date.
 
-## The source of truth
+The top level holds exactly three folders, always the same three: **src** (all
+source code, including the `books/` manuscripts), **temp** (regenerable build
+artifacts), and **output** (the finished PDFs). Everything else at the top is a
+file you run or read.
 
-- **`sovereign-stack-vol1.md`** -- the entire book in one markdown file: every
-  part, the front and back matter, the appendix, and the raw-LaTeX blocks for
-  the figures and the layer diagram. This is the one file you actually write in.
-  Deleting it loses the book; nothing else can regenerate it. Treat it as the
-  master copy.
+## Top-level files
 
-## The machinery (in `src/`)
+- **build.py** the one orchestrator. Discovers books, fingerprints their inputs,
+  rebuilds only what changed, moves finished PDFs to `output/`, and refreshes the
+  recovery snapshot. Losing it loses the whole build; everything else is data.
+- **press.toml** workshop-wide configuration: the build `[order]`, the shared
+  `[defaults]` every book inherits (engine, fonts, paper, page ceiling), and the
+  `[crossmap]` note pairing the Primer with the Atlas.
+- **README.md** how to build, the layout, how the incremental build works, how to
+  add a book, and how the workbook format is authored.
+- **MANIFEST.md** this file.
+- **.gitignore** keeps `temp/`, the recovery snapshot, and caches out of version
+  control.
 
-- **`src/`** -- the build machinery: the LaTeX preamble, the title page, the
-  Python that drives the pipeline, and the test suites. Deleting the folder
-  leaves the manuscript intact but unbuildable until it is restored.
-- **`src/preamble.tex`** -- the LaTeX preamble: page geometry (A4 by default,
-  A5 when `src/paper.tex` selects it), colours, fonts, the TikZ setup for the
-  layer diagram, the `\ssfit` figure-fit helper, the footer ("page X / Y"), and
-  the `\input` of the version tag. Pandoc injects it into every build via `-H`.
-  Delete it and the book still compiles but loses all styling, the footer, and
-  the version stamp, coming out as plain unstyled LaTeX.
-- **`src/frontmatter.tex`** -- the title page and the material before the first
-  chapter, inserted by pandoc's `--include-before-body`. Deleting it drops the
-  cover and front matter; the body still builds.
-- **`src/preprocess.py`** -- the markdown pre-pass that runs before pandoc and
-  writes `temp/vol1_latex.md`, handling the conventions pandoc alone would
-  mangle. Delete it and the build breaks at step 1.
-- **`src/mkversion.py`** -- composes the version tag from `config.toml` (volume
-  and version) and the folder name (iteration). Delete it and the build cannot
-  stamp a version; the tag falls back to the placeholder baked into the
-  preamble.
-- **`src/make_bg.py`** -- regenerates the cover background wash
-  (`assets/bg_titlepage.png`) with Pillow. It is a one-off generator, not part
-  of the normal build. Deleting it only means that one image can no longer be
-  regenerated; the existing PNG still works.
-- **`src/version.tex`** -- the generated tag file (`\def\ssversion{...}`),
-  rewritten by `build.sh` on every run. It is a build product, not a source.
-  Deleting it is harmless; the next build recreates it.
-- **`src/paper.tex`** -- the generated paper-selection file, written by
-  `build.sh` for whichever edition it is building (the same generated-file
-  pattern as `version.tex`). It sets the paper class, the matching `\geometry`
-  call, the version-tag corner coordinates, and the `\sspaperclass` flag the
-  preamble reads to fit the wide diagrams. A build product, not a source:
-  deleting it is harmless, and if it is absent the preamble falls back to A4 so
-  any `.tex` still compiles standalone.
-- **`src/tests/`** -- the two test suites that hold the book to its rules.
-  Deleting them removes the safety net; the book still builds, but nothing
-  checks it.
-- **`src/tests/test_build.py`** -- the build-invariant checks: no em or en
-  dashes, an ASCII-only manuscript, a version tag present, and (after a build)
-  zero overfull boxes, a page count within the ceiling, and that each edition's
-  title page is exactly one page (the Contents heading lands on page 2, which
-  catches a cover whose spacing has silently overflowed onto a second page).
-- **`src/tests/test_review.py`** -- the content-review checks: acronyms expanded
-  on first use, contiguous part and section numbering, well-formed Pointer
-  boxes, referenced images present, the version and tracker agreeing with the
-  folder name, the recovery archive present after a build, and this manifest
-  naming every file.
+## src/  (all source code; nothing here is regenerable)
 
-## The records (project root)
+### src/shared/  (the machinery every book depends on)
 
-- **`build.sh`** -- the build pipeline and entry point: it stamps the version,
-  runs `src/preprocess.py`, `pandoc`, and `latexmk` (writing every byproduct into
-  `temp/` and logging the whole run to `temp/build.log`), moves the finished PDF
-  to `outputs/`, and refreshes the recovery archive. It takes a paper target,
-  `./build.sh` (A4, the default), `./build.sh a5`, or `./build.sh both`, and one
-  housekeeping subcommand, `./build.sh clean`, which lists `temp/` by size and
-  then clears it. Deleting it does not touch the book, but you would have to run
-  those steps by hand to rebuild.
-- **`config.toml`** -- project configuration: title and slug, the volume and
-  version numbers (the half of the tag the folder does not supply), the build
-  settings mirrored for reference, and the targeted Python version. Delete it
-  and `mkversion.py` falls back to defaults; the volume and version are lost.
-- **`tracker.json`** -- the changelog: a `current` pointer (stamped
-  automatically by the build) and a curated `history` of every iteration.
-  Delete it and the recorded history is lost; the build still runs and recreates
-  the `current` stub.
-- **`README.md`** -- the short orientation: how to build, the prerequisites, and
-  what each top-level item is. Reference only; deleting it costs nothing at
-  build time.
-- **`HANDOVER.md`** -- the continuity document, written to survive a context
-  reset: the version mechanism, the single-source decision, the recovery bundle,
-  the file layout, and the work queue. The most important doc to keep if a
-  person or a model has to pick this up cold.
-- **`MANIFEST.md`** -- this file. Deleting it only loses the inventory; a review
-  check will flag its absence.
+- **src/shared/preamble.tex** the series styling, carried from the original book
+  and generalized: the colours, fonts, code listings, tables, TikZ tooling, the
+  running header and version tag, and the workbook tooling the Primer uses (the
+  `\ssbox` checkbox, the three-track `tracks` box with `\tlinux`/`\tmac`/`\twin`,
+  the `promptbox` panel, the `doit` task list, the `\seeline` success line, the `\concept`
+  per-page heading, and the all-in-one `\workpage`). A change here re-fingerprints
+  and rebuilds every book.
+- **src/shared/preprocess.py** the Markdown clean-up step, generic and driven by
+  each book's `[preprocess]` settings. Also holds the workbook block syntax
+  (`### N. Title` plus `::: tracks`, `::: prompt`, `::: doit`, `::: see`) that the Primer is
+  authored in, turned on by `workbook = true`.
+- **src/shared/mkversion.py** composes a book's version tag,
+  `v{volume}v{version}i{iteration}`, and its running-header label.
+- **src/shared/render_svgs.py** renders each book's hand-authored figures:
+  every `assets/*.svg` (the editable source) becomes a `.pdf` under
+  `temp/<slug>/figures/`, where the build embeds it. Freshness is by content
+  hash, so editing an .svg always re-renders and nothing else ever does. The
+  build runs it first; it is also runnable standalone. Needs `cairosvg`
+  (`pip install cairosvg`) whenever a book has .svg figures.
+- **src/shared/make_bg.py** regenerates the cover wash image from its source art;
+  run only when the cover art changes.
+- **src/shared/assets/** images shared across books: **bg_titlepage.png** (the
+  cover wash every title page uses) and **art_blob.png** (the source it derives
+  from).
 
-## The images (in `assets/`)
+### src/tests/
 
-- **`assets/`** -- every image the book embeds. Deleting the folder makes the
-  build fail at the figures. The twelve files are: `shot_main.png`,
-  `shot_settings.png`, and `shot_session.png` (the companion app, the last in a
-  live multi-entry session), `shot_update.png` (a pacman system update) and
-  `shot_monitor.png` (the btop dashboard), `art_spectral.png`, `art_blob.png`,
-  and `art_flow.png` (the appendix art), `lab_relational_a.png`,
-  `lab_relational_b.png`, and `lab_scaling.png` (the expanded appendix science
-  gallery: two multi-lens diagnostic dashboards and a finite-size-scaling study),
-  and `bg_titlepage.png` (the cover wash, itself regenerable via `make_bg.py`).
+- **src/tests/_common.py** the discovery and configuration shared by both suites:
+  locating the tree, loading `press.toml` and each `book.toml`, composing the
+  expected version tag, and listing a book's files.
+- **src/tests/test_build.py** the build invariants, run once per book: no em/en
+  dashes anywhere, an ASCII-only manuscript, a wired version tag that matches the
+  book's config, and (after a build) no overfull boxes, a page count within the
+  ceiling, a one-page title page, and a real PDF. Each translated edition is
+  checked too (no dashes or smart quotes, an ASCII-plus-diacritics charset, and
+  its own one-page title page). Plus the press-wide recovery-archive check.
+- **src/tests/test_review.py** the content review, run once per book: the
+  universal checks (ASCII and dashes, no placeholder markers, no stray
+  whitespace, balanced fences, no doubled words, referenced images present, no
+  dead-weight assets, a real PDF) and the opt-in structural checks a book turns on
+  in its `[review]` table. Each translated edition is reviewed in its own language
+  (charset, placeholders, whitespace, fences, images, and structural Part /
+  section / Pointer checks using that edition's own words). Plus the press-wide
+  MANIFEST-completeness and recovery checks.
 
-## The working folders (regenerable; safe to delete)
+### src/books/  (one folder per book; any folder with a book.toml is a book)
 
-- **`temp/`** -- transient build artifacts: the intermediate `vol1_latex.md`,
-  the generated `.tex`, xelatex's `.aux`, `.log`, `.toc`, `.fls`,
-  `.fdb_latexmk`, and `.xdv`, and `build.log` (the full record of the last run).
-  `latexmk` writes these straight here via `-output-directory`, so the project
-  root stays clean during a build, and nothing is deleted at the end: the traces
-  are kept for review. Clearing them is one overseeable operation,
-  `./build.sh clean`, which prints the folder by size first and then removes only
-  it; the next build recreates it. (This is the folder once called `output/`,
-  then `generated/`; `temp/` is the honest name, because its entire job is to be
-  thrown away.)
-- **`outputs/`** -- the final deliverables: `sovereign-stack-vol1.pdf` (the A4
-  edition) and, when the A5 variant has been built, `sovereign-stack-vol1-a5.pdf`
-  beside it. The plural name earns its keep here: the folder holds one edition or
-  both, or none if a build has not run yet. Deleting a PDF is safe: the next
-  build remakes it, or you recover it from the archive below.
+#### src/books/atlas-home-node/  (The Atlas, Volume 1: Home Node)
 
-## The recovery archive
+- **book.toml** this book's settings: `[project]` (title, header labels),
+  `[version]` (the tag; Volume 1), `[preprocess]`, `[build]`, `[review]` (Part
+  numbering, section numbering, Pointer boxes, and acronym expansion with its
+  documented exception lists), and one `[[language]]` block per translated
+  edition (the Dutch edition and its structural settings).
+- **manuscript.md** the source of truth for the Atlas, in English. **Keep and
+  edit this.**
+- **manuscript-NL.md** the Dutch edition of the Atlas, a translation of
+  manuscript.md living beside it. build.py builds it into
+  `output/atlas-home-node-NL.pdf` alongside the English PDF; it shares the
+  English edition's version tag. **Keep and edit this.**
+- **frontmatter.tex** the Atlas title page and Contents (English).
+- **frontmatter-NL.tex** the Dutch title page and Contents (Omslag / Inhoud),
+  used by the Dutch edition; same elastic layout as frontmatter.tex.
+- **assets/** images embedded by the Atlas only: **shot_main.png** (the companion
+  app's main view) and **shot_update.png** (a system update in progress), plus the
+  figure set: each **fig_*.svg** is a hand-authored diagram source, the only form
+  a figure exists in under src/. The build renders each to a .pdf byproduct in
+  `temp/<slug>/figures/` (also via `python3 src/shared/render_svgs.py`). The
+  figures are shared by both editions.
 
-- **`<version>.zip`** (for example `26.zip`) -- a self-healing snapshot of every
-  source plus the built PDF(s), named after the version folder and refreshed by
-  `build.sh` on every run (step 4 of the build). It excludes `temp/` and itself.
-  This is the belt to the manuscript's braces: delete the loose PDF and recover
-  it from here, or, if a rebuild ever fails on some future machine, extract both
-  the PDF and the exact generating code from this one file. A review check
-  confirms it is present after a build, so the bundle never ships without its own
-  archive inside it. It is itself regenerable, but it is the thing that lets
-  everything else be deleted safely.
+#### src/books/primer-first-contact/  (The Primer: First Contact)
+
+- **book.toml** the Primer's settings. Same shape as the Atlas's, plus
+  `workbook = true` in `[preprocess]`, which turns the concept pages into the
+  one-concept-per-page workbook layout.
+- **manuscript.md** the source of truth for the Primer: one hundred concepts,
+  each authored as a workbook page (explanation, the boxes it needs, a `::: doit`
+  checklist, and a `::: see` success line). **Keep and edit this.**
+- **frontmatter.tex** the Primer title page and Contents.
+- **assets/** images embedded by this book (currently empty; the book builds
+  without book-specific images, and per-concept artwork is a later production step).
+- **sovereign-stack-first-contact.md** an earlier long-form draft of this book,
+  kept beside the source for reference; not consumed by the build.
+
+## Generated, not source (kept out of version control)
+
+- **temp/<slug>/** per-book working files: the cleaned Markdown, the generated
+  `.tex` and `version.tex`, xelatex's byproducts, and `build.log`. Disposable;
+  clear with `python3 build.py clean`.
+- **output/<slug>.pdf** the finished books, one per book, plus one
+  `output/<slug>-<CODE>.pdf` per translated edition (e.g.
+  `atlas-home-node-NL.pdf`). The only files a reader needs.
+- **output/.build-state.json** the hash cache that drives the incremental build.
+  Delete it to force a full rebuild on the next run.
+- **recovery.zip** a self-healing snapshot of every source file plus the built
+  PDFs, refreshed on every build run.

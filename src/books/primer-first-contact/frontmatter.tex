@@ -1,0 +1,59 @@
+\begin{titlepage}
+\thispagestyle{empty}
+% A first "Cover" line in the Contents (and a matching PDF bookmark) pointing back
+% at this title page, so the table of contents opens with a clickable entry to p1.
+\phantomsection
+\addcontentsline{toc}{chapter}{Cover}
+\AddToShipoutPictureBG*{\put(\LenToUnit{0.5683\paperwidth},\LenToUnit{0.5\paperheight}){\makebox(0,0){\includegraphics[width=0.84\paperwidth]{bg_titlepage.png}}}}
+\centering
+\vspace*{1.9cm minus 1cm}
+
+{\sffamily\bfseries\color{accent}\fontsize{46}{50}\selectfont SOVEREIGN STACK\par}
+
+\vspace{9pt minus 3pt}
+{\sffamily\itshape\normalsize\color{softblack!80} A ground-up IT education for the age of AI\par}
+
+\vspace{13pt minus 5pt}
+{\color{rulegray}\rule{0.66\textwidth}{1.1pt}\par}
+\vspace{22pt minus 8pt}
+
+{\sffamily\large\color{accentlt}\textbf{THE PRIMER}\par}
+\vspace{6pt minus 2pt}
+{\sffamily\bfseries\color{softblack}\fontsize{30}{34}\selectfont First Contact\par}
+
+\vspace{20pt minus 8pt}
+
+{\sffamily\large\color{softblack} One hundred first concepts,\\[3pt]
+on three kinds of machine\par}
+
+\vspace{26pt minus 10pt}
+
+{\itshape\normalsize\color{softblack!75}
+The Atlas shows the whole house at once. This book walks you up to its\\
+front door, holding the rail the whole way: a hundred plain words, each one\\
+introduced gently and then actually tried, starting from the one thing you\\
+can already do, until computing stops being a wall and becomes yours.\par}
+
+\vfill
+
+{\sffamily\footnotesize\color{softblack!60}
+The on-ramp to the Atlas: one book, complete in itself. It assumes only that you can search\\
+the web, and it ends with your own AI set up and the Atlas open in front of you.\par}
+\vspace{16pt minus 6pt}
+{\sffamily\small\color{accentlt}\textbf{First Edition}\par}
+\vspace{4pt minus 1pt}
+{\sffamily\footnotesize\color{softblack!55} A workbook, not a lecture: try everything; any page that creates even something small says so plainly.\par}
+\vspace{1.0cm minus 0.7cm}
+\end{titlepage}
+
+% Count the cover as page 1 (see the Atlas frontmatter for the full reasoning).
+\setcounter{page}{2}
+
+\clearpage
+\thispagestyle{plain}
+{\sffamily\Large\bfseries\color{accent}Contents\par}\vspace{6pt}
+{\color{rulegray}\hrule height 0.8pt}\vspace{10pt}
+\makeatletter
+\@starttoc{toc}
+\makeatother
+\clearpage

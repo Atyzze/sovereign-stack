@@ -1,0 +1,33 @@
+# ============================== THE PRIMER - book configuration ==============================
+# "Sovereign Stack - The Primer: First Contact." The on-ramp to the Atlas, one
+# book and complete in itself: it assumes only that the reader can use a search
+# engine, sets them up with an AI of their own early, and walks the hundred
+# small ideas the Atlas quietly assumes, each met and then actually tried.
+
+[project]
+title        = "Sovereign Stack - The Primer: First Contact"
+slug         = "primer-first-contact"
+series_short = "SOVEREIGN STACK"
+book_short   = "PRIMER"
+enabled      = true
+
+[version]
+volume    = 0    # Volume 0: the Primer, the on-ramp (the Atlas proper begins at Volume 1)
+version   = 1    # 1 = "not yet shared"
+iteration = 3    # first iteration in the new press
+
+[preprocess]
+# Same shape as the Atlas: drop the title block above the first section, promote
+# the two front-matter headings to chapters, drop thematic breaks. The Cluster
+# headings are already top-level (#) and the concepts are subsections (###).
+start_marker         = "## Why this book exists"
+promote_to_chapter   = ["## Why this book exists", "## How to read this book"]
+drop_thematic_breaks = true
+# This is a workbook: each "### N. Title" concept becomes its own page, and the
+# ::: tracks / ::: prompt / ::: doit / ::: see blocks become the three-OS box,
+# the prompt panel, the ticked
+# checklist, and the success line. See src/shared/preprocess.py for the syntax.
+workbook             = true
+
+[build]
+# Inherits the workshop [defaults].

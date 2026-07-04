@@ -1,0 +1,88 @@
+<svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" font-family="TeX Gyre Heros, Helvetica, Arial, sans-serif">
+<!-- EDIT ME: this .svg is the hand-authored source of the figure. Labels are <text> elements,
+     positions are the x=/y= numbers (nudge to move), colours are the book palette from
+     src/shared/preamble.tex. After editing, run: python3 build.py  (it re-renders the .pdf). -->
+  <!-- fig_phases: the ten phases of the build, at a glance (Atlas, The Build Path) -->
+  <defs>
+    <marker id="ph_ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#2E7D4F"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="280" fill="#FFFFFF"/>
+
+  <!-- top row: phases 0..4, left to right -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="46" width="140" height="58" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <circle cx="30" cy="46" r="12" fill="#1B5E3A"/><text x="30" y="50.5" fill="#FFFFFF" font-weight="bold">0</text>
+    <text x="100" y="71" font-weight="bold" fill="#1B5E3A">rehearse in a VM</text>
+    <text x="100" y="89" font-size="10.5" fill="#6A7A6A">break it, restore it</text>
+
+    <rect x="200" y="46" width="140" height="58" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <circle cx="200" cy="46" r="12" fill="#1B5E3A"/><text x="200" y="50.5" fill="#FFFFFF" font-weight="bold">1</text>
+    <text x="270" y="71" font-weight="bold" fill="#1B5E3A">the base machine</text>
+    <text x="270" y="89" font-size="10.5" fill="#6A7A6A">hardware, Linux, SSH</text>
+
+    <rect x="370" y="46" width="140" height="58" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <circle cx="370" cy="46" r="12" fill="#1B5E3A"/><text x="370" y="50.5" fill="#FFFFFF" font-weight="bold">2</text>
+    <text x="440" y="71" font-weight="bold" fill="#1B5E3A">the AI core</text>
+    <text x="440" y="89" font-size="10.5" fill="#6A7A6A">model, speech, embeddings</text>
+
+    <rect x="540" y="46" width="140" height="58" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <circle cx="540" cy="46" r="12" fill="#1B5E3A"/><text x="540" y="50.5" fill="#FFFFFF" font-weight="bold">3</text>
+    <text x="610" y="71" font-weight="bold" fill="#1B5E3A">the knowledge</text>
+    <text x="610" y="89" font-size="10.5" fill="#6A7A6A">RAG, offline Wikipedia</text>
+
+    <rect x="710" y="46" width="140" height="58" rx="4" fill="#F6F6F3" stroke="#1B5E3A" stroke-width="1.4"/>
+    <circle cx="710" cy="46" r="12" fill="#1B5E3A"/><text x="710" y="50.5" fill="#FFFFFF" font-weight="bold">4</text>
+    <text x="780" y="71" font-weight="bold" fill="#1B5E3A">serve on the LAN</text>
+    <text x="780" y="89" font-size="10.5" fill="#6A7A6A">pages, proxy, house only</text>
+  </g>
+
+  <!-- bottom row: phases 5..9, right to left -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="710" y="156" width="140" height="58" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <circle cx="710" cy="156" r="12" fill="#2E7D4F"/><text x="710" y="160.5" fill="#FFFFFF" font-weight="bold">5</text>
+    <text x="780" y="181" font-weight="bold" fill="#1B5E3A">cross to the WAN</text>
+    <text x="780" y="199" font-size="10.5" fill="#6A7A6A">domain, HTTPS, one door</text>
+
+    <rect x="540" y="156" width="140" height="58" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <circle cx="540" cy="156" r="12" fill="#2E7D4F"/><text x="540" y="160.5" fill="#FFFFFF" font-weight="bold">6</text>
+    <text x="610" y="181" font-weight="bold" fill="#1B5E3A">real apps</text>
+    <text x="610" y="199" font-size="10.5" fill="#6A7A6A">voice recorder, your API</text>
+
+    <rect x="370" y="156" width="140" height="58" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <circle cx="370" cy="156" r="12" fill="#2E7D4F"/><text x="370" y="160.5" fill="#FFFFFF" font-weight="bold">7</text>
+    <text x="440" y="181" font-weight="bold" fill="#1B5E3A">harden</text>
+    <text x="440" y="199" font-size="10.5" fill="#6A7A6A">firewall, keys, backups</text>
+
+    <rect x="200" y="156" width="140" height="58" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <circle cx="200" cy="156" r="12" fill="#2E7D4F"/><text x="200" y="160.5" fill="#FFFFFF" font-weight="bold">8</text>
+    <text x="270" y="181" font-weight="bold" fill="#1B5E3A">the ecosystem</text>
+    <text x="270" y="199" font-size="10.5" fill="#6A7A6A">agents, digest, drills</text>
+
+    <rect x="30" y="156" width="140" height="58" rx="4" fill="#FFFFFF" stroke="#2E7D4F" stroke-width="1.4"/>
+    <circle cx="30" cy="156" r="12" fill="#2E7D4F"/><text x="30" y="160.5" fill="#FFFFFF" font-weight="bold">9</text>
+    <text x="100" y="181" font-weight="bold" fill="#1B5E3A">the method, forever</text>
+    <text x="100" y="199" font-size="10.5" fill="#6A7A6A">describe, test, verify</text>
+  </g>
+
+  <!-- rail arrows -->
+  <g stroke="#2E7D4F" stroke-width="1.6" fill="none">
+    <line x1="172" y1="75" x2="196" y2="75" marker-end="url(#ph_ah)"/>
+    <line x1="342" y1="75" x2="366" y2="75" marker-end="url(#ph_ah)"/>
+    <line x1="512" y1="75" x2="536" y2="75" marker-end="url(#ph_ah)"/>
+    <line x1="682" y1="75" x2="706" y2="75" marker-end="url(#ph_ah)"/>
+    <path d="M852 75 L866 75 L866 185 L854 185" marker-end="url(#ph_ah)"/>
+    <line x1="706" y1="185" x2="684" y2="185" marker-end="url(#ph_ah)"/>
+    <line x1="536" y1="185" x2="514" y2="185" marker-end="url(#ph_ah)"/>
+    <line x1="366" y1="185" x2="344" y2="185" marker-end="url(#ph_ah)"/>
+    <line x1="196" y1="185" x2="174" y2="185" marker-end="url(#ph_ah)"/>
+  </g>
+
+  <!-- the loop at the end -->
+  <path d="M46 218 C 46 244, 100 244, 100 222" fill="none" stroke="#1B5E3A" stroke-width="1.5" marker-end="url(#ph_ah)"/>
+  <text x="128" y="244" font-size="11.5" fill="#1B5E3A" font-style="italic">and repeat, for every future thing</text>
+
+  <text x="30" y="30" font-size="14" font-weight="bold" fill="#1B5E3A">THE BUILD, IN TEN PHASES</text>
+  <text x="238" y="30" font-size="11.5" fill="#6A7A6A" font-style="italic">each phase ends with something that visibly works</text>
+</svg>

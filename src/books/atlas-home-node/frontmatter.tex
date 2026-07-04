@@ -34,7 +34,7 @@
 \vspace{30pt minus 12pt}
 
 {\sffamily\large\color{softblack} Build Your Own Local AI at Home,\\[3pt]
-Reachable Securely From Anywhere, Depending on Nobody\par}
+Reachable Securely From Anywhere\par}
 
 \vspace{26pt minus 10pt}
 
@@ -52,9 +52,17 @@ Later volumes carry the same method outward: the school, the university, the cit
 \vspace{16pt minus 6pt}
 {\sffamily\small\color{accentlt}\textbf{First Edition}\par}
 \vspace{4pt minus 1pt}
-{\sffamily\footnotesize\color{softblack!55} A living field manual, a map, not scripture.\par}
+{\sffamily\footnotesize\color{softblack!55} A living field manual, a map.\par}
 \vspace{1.0cm minus 0.7cm}
 \end{titlepage}
+
+% Count the cover as page 1. The titlepage environment resets the page counter
+% to 1 at its end (and again under oneside), so without this the body would print
+% "1" on the first numbered page (physically page 2 of the PDF), one behind what a
+% viewer's page index shows. Setting it to 2 here makes the printed footer number
+% equal the physical PDF page on every page (the cover's own footer stays hidden),
+% so the last page reads "84 / 84" and \pageref{LastPage} follows to 84.
+\setcounter{page}{2}
 
 \clearpage
 \thispagestyle{plain}

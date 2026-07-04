@@ -1,161 +1,281 @@
 #!/usr/bin/env python3
-"""Build-invariant tests for Sovereign Stack, Volume 1.
+"""Build-invariant tests for Sovereign Press (all books).
 
-Run from the project root (standalone for the source checks, or after build.sh
-for the full set):
+Run from the press root, standalone for the source checks or after a build for
+the full set:
 
-    python3 src/tests/test_build.py
+    python3 tests/test_build.py            # every book
+    python3 tests/test_build.py atlas-home-node primer-first-contact
 
-These encode the constraints the book is held to, the same checks that were run
-by hand on every iteration: no em or en dashes anywhere, an ASCII-only
-manuscript, a version tag present, and, once the build has run, no overfull
-boxes in either edition's log, a page count inside the deliberate ceiling, and
-both editions (A4 and A5) actually produced, since a bare build now makes both.
-Exit code 0 means every check passed. This is the book practising its own
+These encode the constraints every book is held to, the same checks that were
+run by hand on every iteration of the original single book, now applied once per
+book the press discovers: no em or en dashes anywhere, an ASCII-only manuscript,
+a version tag wired to its book.toml, and, once a build has run, no overfull
+boxes in that book's log, a page count inside the configured ceiling, the right
+version tag in the build state, and a title page that is exactly one page. Exit
+code 0 means every check passed. This is the press practising the book's own
 thesis: own the tests.
 """
 import os
-import re
 import sys
-import glob
 import shutil
 import subprocess
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MD = os.path.join(ROOT, "sovereign-stack-vol1.md")
-PREAMBLE = os.path.join(ROOT, "src", "preamble.tex")
-PDF = os.path.join(ROOT, "outputs", "sovereign-stack-vol1.pdf")
-LOG = os.path.join(ROOT, "temp", "sovereign-stack-vol1.log")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _common as C  # noqa: E402
 
 fails = []
 
 
 def check(name, ok, detail=""):
-    tag = "PASS" if ok else "FAIL"
-    print(f"[{tag}] {name}" + (f"  ({detail})" if detail else ""))
+    print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f"  ({detail})" if detail else ""))
     if not ok:
         fails.append(name)
 
 
 def skip(name, why):
-    print(f"[skip] {name}  ({why})")
+    print(f"  [skip] {name}  ({why})")
 
 
-# ---- source checks (always available) ----
-md = open(MD, encoding="utf-8").read()
-check("no em-dash (U+2014) in manuscript", "\u2014" not in md)
-check("no en-dash (U+2013) in manuscript", "\u2013" not in md)
-non_ascii = sorted({c for c in md if ord(c) > 127})
-check("manuscript is ASCII-only", not non_ascii,
-      "found: " + " ".join(non_ascii) if non_ascii else "")
+def check_manuscript_ascii_and_dashes(slug, p):
+    md = open(p["manuscript"], encoding="utf-8").read()
+    check("no em-dash (U+2014) in manuscript", "\u2014" not in md)
+    check("no en-dash (U+2013) in manuscript", "\u2013" not in md)
+    non_ascii = sorted({c for c in md if ord(c) > 127})
+    check("manuscript is ASCII-only", not non_ascii,
+          "found: " + " ".join(non_ascii) if non_ascii else "")
 
-pre = open(PREAMBLE, encoding="utf-8").read()
-m = re.search(r"v\d+v\d+i\d+", pre)
-check("version tag present in preamble.tex", bool(m), m.group(0) if m else "none")
 
-# The no-dash rule is "anywhere", not "in the manuscript only". The hand-written
-# LaTeX source is checked for literal em/en dashes too (a real em-dash once sat in
-# a preamble comment and went unseen because only the .md was scanned). The .tex
-# is intentionally not held to ASCII-only: the preamble defines glyph fallbacks
-# for a few Unicode characters, which must appear literally. A genuine en/em dash
-# in LaTeX is written "--" / "---" (ASCII hyphens), so a literal U+2013 or U+2014
-# in the source is always an accident.
-TEX_SOURCES = [("preamble.tex", PREAMBLE),
-               ("frontmatter.tex", os.path.join(ROOT, "src", "frontmatter.tex"))]
-dash_hits = []
-for label, path in TEX_SOURCES:
-    if os.path.exists(path):
-        t = open(path, encoding="utf-8").read()
-        if "\u2014" in t:
-            dash_hits.append(f"{label}: em-dash")
-        if "\u2013" in t:
-            dash_hits.append(f"{label}: en-dash")
-check("no em/en dash in LaTeX source (preamble, frontmatter)", not dash_hits,
-      "; ".join(dash_hits) if dash_hits else "")
+def check_tex_sources_no_dashes(slug, p):
+    # The no-dash rule is "anywhere", not "manuscript only". The hand-written
+    # LaTeX (this book's frontmatter, each language frontmatter, and the shared
+    # preamble) is scanned for literal em/en dashes too. The .tex is intentionally
+    # NOT held to ASCII-only: the preamble defines glyph fallbacks for a few
+    # Unicode characters that must appear literally, and a translated title page
+    # carries Latin diacritics. A real en/em dash in LaTeX is written -- / ---
+    # (ASCII hyphens), so a literal U+2013 / U+2014 in the source is an accident.
+    sources = [("frontmatter.tex", p["frontmatter"]),
+               ("shared/preamble.tex", os.path.join(C.SHARED, "preamble.tex"))]
+    for lang in C.book_languages(slug):
+        lp = C.language_paths(slug, lang)
+        if lp["frontmatter"] != p["frontmatter"]:
+            sources.append((f"{os.path.basename(lp['frontmatter'])} ({lp['code']})",
+                            lp["frontmatter"]))
+    hits = []
+    for label, path in sources:
+        if os.path.exists(path):
+            t = open(path, encoding="utf-8").read()
+            if "\u2014" in t:
+                hits.append(f"{label}: em-dash")
+            if "\u2013" in t:
+                hits.append(f"{label}: en-dash")
+    check("no em/en dash in LaTeX source (frontmatter, shared preamble)",
+          not hits, "; ".join(hits) if hits else "")
 
-# ---- build-output checks (after build.sh) ----
-# Overfull boxes are checked on EVERY edition's latexmk log, not just A4's: the A5
-# edition reflows on a smaller page, so an overfull box can appear there alone. The
-# per-edition logs are temp/sovereign-stack-vol1.log (A4) and ...-a5.log (A5); the
-# tee'd temp/build.log is intentionally excluded so latexmk warnings are not
-# double-counted.
-edition_logs = sorted(glob.glob(os.path.join(ROOT, "temp", "sovereign-stack-vol1*.log")))
-if edition_logs:
-    for lg in edition_logs:
-        lname = os.path.basename(lg)
-        ltext = open(lg, encoding="utf-8", errors="ignore").read()
+
+def check_version_wired(slug, p):
+    # The shared preamble must reference \ssversion and read the generated
+    # version.tex, so the tag is computed rather than hard-typed.
+    pre = open(os.path.join(C.SHARED, "preamble.tex"), encoding="utf-8").read()
+    wired = ("\\ssversion" in pre) and ("version.tex" in pre)
+    check("shared preamble uses the auto-derived \\ssversion tag", wired)
+    # After a build, the generated tag must equal the tag composed from book.toml.
+    want = C.compose_tag(slug)
+    if os.path.exists(p["version_tex"]):
+        vt = open(p["version_tex"], encoding="utf-8").read()
+        import re
+        m = re.search(r"v\d+v\d+i\d+", vt)
+        got = m.group(0) if m else None
+        check("generated version.tex tag matches book.toml", got == want,
+              f"book.toml={want}, version.tex={got}")
+    else:
+        skip("generated version.tex tag matches book.toml",
+             "version.tex not built yet; run build.py")
+
+
+def check_overfull(slug, p):
+    # Overfull boxes are read from this book's per-run latexmk log (temp/<slug>/
+    # <slug>.log), not the tee'd build.log, so warnings are not double-counted.
+    if os.path.exists(p["latexmk_log"]):
+        ltext = open(p["latexmk_log"], encoding="utf-8", errors="ignore").read()
         n_over = ltext.count("Overfull \\hbox")
-        check(f"no overfull hboxes in build log ({lname})", n_over == 0, f"{n_over} found")
-else:
-    skip("overfull-hbox check", "build log not found; run build.sh first")
+        check("no overfull hboxes in build log", n_over == 0, f"{n_over} found")
+    else:
+        skip("overfull-hbox check", "build log not found; run build.py first")
 
-if os.path.exists(PDF):
+
+def check_page_ceiling(slug, p):
+    ceiling = C.page_ceiling(slug)
+    if os.path.exists(p["pdf"]):
+        pages = C.pdf_pages(p["pdf"])
+        if pages is None:
+            skip("page-count check", "could not read PDF")
+        else:
+            check(f"page count within the {ceiling}-page ceiling",
+                  1 <= pages <= ceiling, f"{pages} pages")
+    else:
+        skip("page-count check", "PDF not found; run build.py first")
+
+
+def check_deliverable(slug, p):
+    # A complete build leaves a single, non-trivial PDF in output/. The 50 KB floor
+    # distinguishes a real, rendered PDF from an empty or stub file.
+    if not os.path.exists(p["pdf"]):
+        skip("deliverable PDF present", "not built yet; run build.py first")
+        return
+    ok = os.path.getsize(p["pdf"]) > 50_000
+    check("deliverable PDF present and non-trivial", ok,
+          "" if ok else f"missing or too small: output/{slug}.pdf")
+
+
+def check_title_one_page(slug, p):
+    # A title page whose fixed spacing overflows its paper does NOT raise an
+    # overfull box: \end{titlepage} silently flows the excess onto a second page,
+    # which then inherits the running header (an orphan). The structural signal:
+    # the cover is page 1, so the Contents heading must fall on page 2. If the
+    # title page spills, page 2 is the orphan and Contents slides to page 3.
+    if not os.path.exists(p["pdf"]):
+        skip("title page is one page", "PDF not found; run build.py first")
+        return
+    if not shutil.which("pdftotext"):
+        skip("title page is one page", "pdftotext not available")
+        return
     try:
-        info = subprocess.run(["pdfinfo", PDF], capture_output=True, text=True).stdout
-        pages = int(next(l.split()[1] for l in info.splitlines()
-                         if l.startswith("Pages")))
-        check("page count within the 100-page ceiling", 1 <= pages <= 100,
-              f"{pages} pages")
-    except Exception as e:  # pdfinfo missing or unreadable
-        skip("page-count check", f"could not read PDF ({e})")
-else:
-    skip("page-count check", "PDF not found; run build.sh first")
+        p2 = subprocess.run(["pdftotext", "-f", "2", "-l", "2", p["pdf"], "-"],
+                            capture_output=True, text=True).stdout
+    except Exception as e:
+        skip("title page is one page", f"pdftotext failed ({e})")
+        return
+    ok = ("Contents" in p2) and ("Cover" in p2)
+    check("title page is one page; Contents on p2", ok,
+          "" if ok else "page 2 is not the Contents page (title page overflowed)")
 
-# ---- both editions must be produced on every standard build ----
-# A bare ./build.sh now builds BOTH editions, so a complete build is A4 + A5. This
-# asserts both deliverables exist and are non-trivial in size, so a silently missing
-# edition (the A5 was once skipped when A4 was the default) fails the suite instead
-# of passing unnoticed. It is gated on a build having actually run: on a fresh
-# checkout with no build artifacts it skips, exactly like the other build-output
-# checks, so the standalone source-only run is unaffected. The 50 KB floor
-# distinguishes a real, rendered PDF from an empty or stub file.
-EDITIONS = {
-    "A4 (sovereign-stack-vol1.pdf)": os.path.join(ROOT, "outputs", "sovereign-stack-vol1.pdf"),
-    "A5 (sovereign-stack-vol1-a5.pdf)": os.path.join(ROOT, "outputs", "sovereign-stack-vol1-a5.pdf"),
-}
-build_ran = (os.path.exists(os.path.join(ROOT, "temp", "build.log"))
-             or any(os.path.exists(p) for p in EDITIONS.values()))
-if not build_ran:
-    skip("both editions present (A4 + A5)", "no build artifacts; run build.sh first")
-else:
-    missing = [label for label, p in EDITIONS.items()
-               if not (os.path.exists(p) and os.path.getsize(p) > 50_000)]
-    check("both editions present and non-trivial (A4 + A5)", not missing,
-          "" if not missing else "missing or too small: " + "; ".join(missing))
 
-# ---- title page must be exactly one page (checked per edition) ----
-# A title page whose fixed spacing overflows its paper does NOT raise an overfull
-# box: \end{titlepage} silently flows the excess onto a second page, which then
-# inherits the running header and the version tag (an orphan page). Nothing in the
-# log flags it. The signal that actually catches it is structural: the cover is
-# page 1, so the Contents heading must fall on page 2. If the title page spills,
-# page 2 is the orphan and the Contents slides to page 3, so the marker is absent.
-# This runs over EVERY PDF in outputs/ (A4 and A5 alike): the A5 edition has less
-# vertical room, so an edition-specific overflow must be checked on the edition
-# itself, not only on the A4 PDF the other build checks read.
-pdfs = sorted(glob.glob(os.path.join(ROOT, "outputs", "*.pdf")))
-if not pdfs:
-    skip("title page is one page", "no PDFs in outputs/; run build.sh first")
-elif not shutil.which("pdftotext"):
-    skip("title page is one page", "pdftotext not available")
-else:
-    for pdf in pdfs:
-        name = os.path.basename(pdf)
-        try:
-            p2 = subprocess.run(["pdftotext", "-f", "2", "-l", "2", pdf, "-"],
-                                capture_output=True, text=True).stdout
-        except Exception as e:
-            skip(f"title page is one page ({name})", f"pdftotext failed ({e})")
+def check_language_variant(slug, lang):
+    """Build invariants for one translated edition. The no-dash rule still holds
+    and the charset is ASCII plus known Latin diacritics (so a stray smart quote
+    or exotic codepoint is caught); once built, the PDF is real, within the page
+    ceiling, free of overfull boxes, and keeps its title page to one page,
+    verified with this edition's own words for Cover and Contents.
+    """
+    lp = C.language_paths(slug, lang)
+    code = lp["code"]
+    t = f"[{code}] "
+    if not os.path.exists(lp["manuscript"]):
+        check(t + "manuscript present", False,
+              f"missing: {os.path.basename(lp['manuscript'])}")
+        return
+    md = open(lp["manuscript"], encoding="utf-8").read()
+    check(t + "no em-dash (U+2014) in manuscript", "\u2014" not in md)
+    check(t + "no en-dash (U+2013) in manuscript", "\u2013" not in md)
+    smart = sorted({c for c in md if c in "\u2018\u2019\u201c\u201d"})
+    check(t + "no curly/smart quotes in manuscript", not smart,
+          "found: " + " ".join(smart) if smart else "")
+    exotic = sorted({c for c in md if ord(c) > 127 and c not in C.LATIN_DIACRITICS})
+    check(t + "manuscript is ASCII + known diacritics only", not exotic,
+          "unexpected: " + " ".join(exotic) if exotic else "")
+
+    # Overfull boxes from this edition's own latexmk log.
+    if os.path.exists(lp["latexmk_log"]):
+        ltext = open(lp["latexmk_log"], encoding="utf-8", errors="ignore").read()
+        n_over = ltext.count("Overfull \\hbox")
+        check(t + "no overfull hboxes in build log", n_over == 0, f"{n_over} found")
+    else:
+        skip(t + "overfull-hbox check", "build log not found; run build.py first")
+
+    if not os.path.exists(lp["pdf"]):
+        skip(t + "PDF checks", "not built yet; run build.py first")
+        return
+    ok = os.path.getsize(lp["pdf"]) > 50_000
+    check(t + "deliverable PDF present and non-trivial", ok,
+          "" if ok else f"missing or too small: output/{slug}-{code}.pdf")
+    ceiling = C.page_ceiling(slug)
+    pages = C.pdf_pages(lp["pdf"])
+    if pages is None:
+        skip(t + "page-count check", "could not read PDF")
+    else:
+        check(t + f"page count within the {ceiling}-page ceiling",
+              1 <= pages <= ceiling, f"{pages} pages")
+
+    # Title page is one page, checked with this edition's Cover/Contents words.
+    cover_word = lang.get("cover_word", "Cover")
+    contents_word = lang.get("contents_word", "Contents")
+    if not shutil.which("pdftotext"):
+        skip(t + "title page is one page", "pdftotext not available")
+        return
+    try:
+        p2 = subprocess.run(["pdftotext", "-f", "2", "-l", "2", lp["pdf"], "-"],
+                            capture_output=True, text=True).stdout
+    except Exception as e:
+        skip(t + "title page is one page", f"pdftotext failed ({e})")
+        return
+    ok = (contents_word in p2) and (cover_word in p2)
+    check(t + f"title page is one page; {contents_word} on p2", ok,
+          "" if ok else f"page 2 lacks '{contents_word}'/'{cover_word}' (title page overflowed?)")
+
+
+def check_recovery_archive():
+    # The bundle must always carry a snapshot of itself (recovery.zip), so the
+    # base files are always recoverable from inside the tree. Gated on at least
+    # one PDF existing, like the other post-build checks.
+    archive = os.path.join(C.ROOT, "recovery.zip")
+    any_pdf = any(os.path.exists(C.book_paths(s)["pdf"]) for s in C.discover_books())
+    if not any_pdf:
+        skip("recovery archive present", "no PDFs yet; run build.py first")
+        return
+    if os.path.exists(archive):
+        asize = os.path.getsize(archive)
+        check("recovery archive present and non-trivial", asize > 50_000,
+              f"recovery.zip, {asize:,} bytes")
+    else:
+        check("recovery archive present and non-trivial", False,
+              "recovery.zip not found; build.py should maintain it")
+
+
+def main():
+    wanted = sys.argv[1:]
+    books = C.discover_books()
+    if wanted:
+        unknown = [s for s in wanted if s not in books]
+        if unknown:
+            print("unknown book(s): " + ", ".join(unknown))
+            print("available: " + ", ".join(books))
+            sys.exit(2)
+        books = wanted
+
+    if not books:
+        print("no books found under books/*/book.toml")
+        sys.exit(2)
+
+    print("=" * 70)
+    print("BUILD INVARIANTS  ::  " + ", ".join(books))
+    print("=" * 70)
+
+    for slug in books:
+        p = C.book_paths(slug)
+        print(f"\n[{slug}]  (tag {C.compose_tag(slug)})")
+        if not os.path.exists(p["manuscript"]):
+            check("manuscript.md present", False, f"missing: books/{slug}/manuscript.md")
             continue
-        # page 2 of a healthy build is the Contents page: it carries the heading
-        # "Contents" and the first TOC entry "Cover". The orphan overflow page has
-        # neither (it holds the strap line and the running header).
-        ok = ("Contents" in p2) and ("Cover" in p2)
-        check(f"title page is one page; Contents on p2 ({name})", ok,
-              "" if ok else "page 2 is not the Contents page (title page overflowed)")
+        check_manuscript_ascii_and_dashes(slug, p)
+        check_tex_sources_no_dashes(slug, p)
+        check_version_wired(slug, p)
+        check_overfull(slug, p)
+        check_page_ceiling(slug, p)
+        check_deliverable(slug, p)
+        check_title_one_page(slug, p)
+        for lang in C.book_languages(slug):
+            check_language_variant(slug, lang)
 
-print()
-if fails:
-    print(f"{len(fails)} check(s) FAILED: {', '.join(fails)}")
-    sys.exit(1)
-print("all checks passed")
+    print("\n[press]")
+    check_recovery_archive()
+
+    print()
+    if fails:
+        print(f"{len(fails)} check(s) FAILED: {', '.join(fails)}")
+        sys.exit(1)
+    print("all build-invariant checks passed")
+
+
+if __name__ == "__main__":
+    main()
