@@ -4,6 +4,11 @@ A small workshop for building a whole shelf of books from plain text. Each book
 is a folder of Markdown plus a little configuration; one command turns every
 book into a finished PDF, and it only rebuilds the ones that actually changed.
 
+The entire project lives at **https://github.com/Atyzze/sovereign-stack**: source,
+build system, and manuscripts together. Clone it and you can rebuild every book
+here yourself, or fork it and grow your own shelf. The books are open the same
+way the stack they describe is: readable, buildable, and yours to change.
+
 It currently holds the first two volumes of the series:
 
 - **The Atlas, Volume 1: Home Node** (`src/books/atlas-home-node/`) the dense, complete
@@ -17,7 +22,9 @@ It currently holds the first two volumes of the series:
 
 ## Quick build
 
-Prerequisites: Python 3.11+ (the scripts are standard-library only), `pandoc`,
+Prerequisites: Python 3.11+ (the build itself is standard-library only;
+`pip install -r requirements.txt` adds `cairosvg` for figure rendering and
+`Pillow` for the one-off cover regenerator), `pandoc`,
 TeX Live (`xelatex` + `latexmk` + `lmodern`), and the fonts TeX Gyre Pagella,
 TeX Gyre Heros, and DejaVu Sans Mono. On a full TeX Live install everything is
 already present; on a minimal one, `lmodern` is the package most likely missing

@@ -1,0 +1,23 @@
+# Python packages the press needs beyond the standard library.
+#
+# build.py, preprocess.py, mkversion.py and the tests are standard-library only,
+# so a plain source checkout needs nothing here just to be read. These two are
+# for the steps that touch images:
+#
+#   cairosvg  -- render_svgs.py turns each book's hand-authored assets/*.svg
+#                figures into the embeddable .pdf renders the build inlines. Any
+#                book that ships .svg figures (the Atlas does) needs it to build.
+#                It also needs the system Cairo library present (libcairo2 on
+#                Debian/Ubuntu, cairo on Arch/macOS-brew); pip cannot supply that.
+#
+#   Pillow    -- make_bg.py regenerates the faded cover wash from its source art.
+#                A one-off, run only when the cover art changes; not part of a
+#                normal build.
+#
+# Install both with:  pip install -r requirements.txt
+#
+# The rest of the toolchain (pandoc, TeX Live with xelatex + latexmk, and the
+# fonts) is not pip-installable and is covered in README.md under "Quick build".
+
+cairosvg>=2.7
+Pillow>=10.0

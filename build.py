@@ -492,7 +492,7 @@ def refresh_snapshot():
         print("  (zip not found; skipping recovery snapshot)")
         return
     items = ["press.toml", "build.py", "README.md", "MANIFEST.md", ".gitignore",
-             "src"]
+             "requirements.txt", "src"]
     items = [i for i in items if os.path.exists(os.path.join(ROOT, i))]
     # include the finished PDFs (the state file's churn is harmless to include)
     if os.path.isdir(OUTPUT_DIR):

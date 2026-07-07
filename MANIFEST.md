@@ -22,6 +22,10 @@ file you run or read.
 - **MANIFEST.md** this file.
 - **.gitignore** keeps `temp/`, the recovery snapshot, and caches out of version
   control.
+- **requirements.txt** the two pip packages beyond the standard library:
+  `cairosvg` (figure rendering, needed to build any book with .svg figures) and
+  `Pillow` (the one-off cover-wash regenerator). Everything else in the build,
+  `build.py` and the tests included, is standard-library only.
 
 ## src/  (all source code; nothing here is regenerable)
 
