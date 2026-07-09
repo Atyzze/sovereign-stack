@@ -4,8 +4,7 @@ A small workshop for building a whole shelf of books from plain text. Each book
 is a folder of Markdown plus a little configuration; one command turns every
 book into a finished PDF, and it only rebuilds the ones that actually changed.
 
-The entire project lives at **https://github.com/Atyzze/sovereign-stack**: source,
-build system, and manuscripts together. Clone it and you can rebuild every book
+Source, build system, and manuscripts together. Clone it and you can rebuild every book
 here yourself, or fork it and grow your own shelf. The books are open the same
 way the stack they describe is: readable, buildable, and yours to change.
 
