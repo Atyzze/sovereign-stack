@@ -142,7 +142,7 @@ build.py clean` empties `temp/` and touches nothing else.
 - A book's **`manuscript.md`** is its source; keep and edit it.
 - The generated **`.tex`** lives under `temp/<slug>/` and is rebuilt every time.
 - A book's **`output/<slug>.pdf`** is the only file a reader needs. To share a book,
-  share its PDF and nothing else.
+  share its PDF.
 - Everything under `temp/` is disposable; delete it any time with `clean`.
 - `recovery.zip` is the safety net: delete a loose PDF and recover it from there.
 
