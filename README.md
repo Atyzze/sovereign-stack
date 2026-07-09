@@ -35,8 +35,6 @@ python3 build.py                 # build every enabled book that changed
 python3 build.py atlas-home-node # build just one (or several) by name
 python3 build.py --force         # rebuild everything, ignoring the cache
 python3 build.py list            # show every book, its tag, and whether it is current
-python3 build.py clean           # remove the temp/ working directory
-python3 build.py bump <slug>     # increment a book's iteration number
 python3 build.py snapshot        # refresh the recovery.zip without building
 
 python3 src/tests/test_build.py      # build invariants, per book (dashes, ASCII, pages, ...)
